@@ -1,0 +1,7 @@
+photos.example.com {
+    reverse_proxy photos:3000
+}
+
+files.example.com {
+    reverse_proxy files:8080
+}

@@ -1,0 +1,9 @@
+{
+  "date": "2026-10-03",
+  "framework": "React + TypeScript + Vite (new project)",
+  "existingFonts": [],
+  "existingPalette": null,
+  "motion": "none",
+  "spacing": "4pt",
+  "source": "README.md and docs/04_FRONTEND_GUIDE.md"
+}

@@ -1,0 +1,28 @@
+[
+  {
+    "date": "2026-10-03",
+    "macrostructure": "Index-First",
+    "theme": "Cobalt",
+    "enrichment": "none",
+    "nav": "N3 Side-rail",
+    "footer": "Ft2 Inline",
+    "brief": "Korean home server dashboard: setup, login, persisted service cards"
+  },
+  {
+    "date": "2026-10-03",
+    "macrostructure": "Catalogue",
+    "theme": "Cobalt with saved user themes",
+    "enrichment": "none",
+    "nav": "N9 Edge-aligned minimal on home; side-rail on settings",
+    "footer": "Ft2 Inline",
+    "brief": "Clean service home; separate management pages, persistent themes/CSS, preview import",
+    "critique": {
+      "Philosophy": 4,
+      "Hierarchy": 5,
+      "Execution": 4,
+      "Specificity": 4,
+      "Restraint": 5,
+      "Variety": 4
+    }
+  }
+]
