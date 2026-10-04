@@ -27,11 +27,26 @@ export function DashboardPage({ manage = false }: { manage?: boolean }) {
   const dashboardId = list.data?.[0]?.id
   const query = useQuery({ queryKey: ['dashboards', dashboardId], queryFn: () => api.dashboard(dashboardId!), enabled: !!dashboardId })
   const dashboard = query.data
-  const statuses = useQuery({ queryKey: ['web-statuses', dashboardId], queryFn: () => api.webStatuses(dashboardId!), enabled: !!dashboard, refetchInterval: query => query.state.data?.some(status => status.checking) ? 1000 : 15_000 })
+  const statuses = useQuery({ queryKey: ['web-statuses', dashboardId], queryFn: () => api.webStatuses(dashboardId!), enabled: !!dashboard, refetchOnWindowFocus: false, refetchOnReconnect: false, refetchInterval: query => query.state.data?.some(status => status.checking) ? 1000 : false })
   useEffect(() => { if (dashboard) void qc.invalidateQueries({ queryKey: ['web-statuses', dashboardId] }) }, [dashboard?.revision, dashboardId, qc])
-  const check = useMutation({ mutationFn: () => api.checkWebStatuses(dashboardId!), onSuccess: data => qc.setQueryData(['web-statuses', dashboardId], data) })
+  const check = useMutation({ mutationFn: () => api.checkWebStatuses(dashboardId!), onSuccess: async data => {
+    // An earlier cached GET must not overwrite the newly queued batch and
+    // stop result polling before that batch finishes.
+    await qc.cancelQueries({ queryKey: ['web-statuses', dashboardId] })
+    qc.setQueryData(['web-statuses', dashboardId], data)
+  } })
+  const { mutate: checkStatuses } = check
+  const checkedPage = useRef('')
+  // A visit, or a newly added/changed URL, starts one batch. Clock ticks,
+  // focus/reconnect and completed-result reads never start another check.
+  const checkKey = dashboard ? JSON.stringify([dashboard.id, manage, dashboard.groups.flatMap(group => group.services).map(link => [link.id, link.url, link.webCheckEnabled]).sort((a, b) => String(a[0]).localeCompare(String(b[0])))]) : ''
+  useEffect(() => {
+    if (!checkKey || checkedPage.current === checkKey) return
+    checkedPage.current = checkKey
+    checkStatuses()
+  }, [checkKey, checkStatuses])
   const statusFor = (id: string) => statuses.data?.find(status => status.serviceId === id)
-  const statusToolbar = <div className={styles.statusToolbar}><span>웹 상태 · 서버에서 30초마다 확인</span><Button variant="ghost" onClick={() => check.mutate()} loading={check.isPending} disabled={check.isPending || !dashboard}><RefreshCw size={14} aria-hidden="true" />지금 확인</Button>{(statuses.isError || check.isError) && <ErrorNotice error={statuses.error ?? check.error} onRetry={() => void statuses.refetch()} />}</div>
+  const statusToolbar = <div className={styles.statusToolbar}><span>웹 상태 · 페이지 접속 시 확인</span><Button variant="ghost" onClick={() => check.mutate()} loading={check.isPending} disabled={check.isPending || !dashboard}><RefreshCw size={14} aria-hidden="true" />지금 확인</Button>{(statuses.isError || check.isError) && <ErrorNotice error={statuses.error ?? check.error} onRetry={() => check.mutate()} />}</div>
   const remove = useMutation({ mutationFn: api.deleteService, onSuccess: async (_, service) => { setUndoService(service); await qc.invalidateQueries({ queryKey: ['dashboards'] }); undoRef.current?.focus() }, onError: () => { void qc.invalidateQueries({ queryKey: ['dashboards'] }) } })
   const restore = useMutation({ mutationFn: async () => {
     if (!undoService) return

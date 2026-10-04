@@ -11,21 +11,18 @@ import (
 	"time"
 
 	"homedashboard/internal/domain"
-	"homedashboard/internal/storage"
 	"homedashboard/internal/webfetch"
 )
 
-const Interval = 30 * time.Second
-
 type entry struct {
-	url     string
-	enabled bool
-	status  domain.WebStatus
-	started time.Time
+	url      string
+	enabled  bool
+	status   domain.WebStatus
+	started  time.Time
+	accessed time.Time
 }
 type job struct{ id, url string }
 type Monitor struct {
-	store   *storage.Repository
 	client  *http.Client
 	ctx     context.Context
 	cancel  context.CancelFunc
@@ -35,59 +32,31 @@ type Monitor struct {
 	jobs    chan job
 }
 
-func New(store *storage.Repository, client *http.Client) *Monitor {
+func New(client *http.Client) *Monitor {
 	ctx, cancel := context.WithCancel(context.Background())
-	m := &Monitor{store: store, client: client, ctx: ctx, cancel: cancel, entries: map[string]entry{}, jobs: make(chan job, 512)}
+	m := &Monitor{client: client, ctx: ctx, cancel: cancel, entries: map[string]entry{}, jobs: make(chan job, 512)}
 	for range 4 {
 		m.wg.Go(m.worker)
 	}
-	m.wg.Go(func() {
-		m.scan()
-		ticker := time.NewTicker(Interval)
-		defer ticker.Stop()
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-ticker.C:
-				m.scan()
-			}
-		}
-	})
 	return m
 }
 
 func (m *Monitor) Close() { m.cancel(); m.wg.Wait() }
 
-func (m *Monitor) scan() {
-	links, err := m.store.MonitorLinks(m.ctx)
-	if err != nil {
-		if m.ctx.Err() == nil {
-			slog.Warn("could not load links for web checks")
-		}
-		return
-	}
-	m.Snapshot(links, false)
-	live := make(map[string]bool, len(links))
-	for _, link := range links {
-		live[link.ID] = true
-	}
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	for id := range m.entries {
-		if !live[id] {
-			delete(m.entries, id)
-		}
-	}
-}
-
-// Snapshot queues missing or stale observations without holding up the page.
-// Manual refreshes are coalesced and limited to one start per link per 5s.
-func (m *Monitor) Snapshot(links []domain.Service, force bool) []domain.WebStatus {
+// Snapshot reads cached observations. Only an explicit refresh from a page
+// visit or the check button can queue HTTP checks. Result polling never does.
+// Concurrent refreshes are coalesced, with one start per link per 5s.
+func (m *Monitor) Snapshot(links []domain.Service, refresh bool) []domain.WebStatus {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	result := make([]domain.WebStatus, 0, len(links))
 	now := time.Now().UTC()
+	// Prune unused observations on access, without an idle timer or DB scan.
+	for id, item := range m.entries {
+		if now.Sub(item.accessed) >= time.Hour && !item.status.Checking {
+			delete(m.entries, id)
+		}
+	}
 	for _, link := range links {
 		item, found := m.entries[link.ID]
 		if !found || item.url != link.URL || item.enabled != link.WebCheckEnabled {
@@ -95,7 +64,7 @@ func (m *Monitor) Snapshot(links []domain.Service, force bool) []domain.WebStatu
 		}
 		if !item.enabled {
 			item.status = domain.WebStatus{ServiceID: link.ID, State: "disabled", Message: "상태 확인 꺼짐"}
-		} else if !item.status.Checking && (now.Sub(item.started) >= Interval || (force && now.Sub(item.started) >= 5*time.Second)) {
+		} else if refresh && !item.status.Checking && now.Sub(item.started) >= 5*time.Second {
 			select {
 			case m.jobs <- job{link.ID, link.URL}:
 				item.started, item.status.Checking = now, true
@@ -105,6 +74,7 @@ func (m *Monitor) Snapshot(links []domain.Service, force bool) []domain.WebStatu
 			default:
 			}
 		}
+		item.accessed = now
 		m.entries[link.ID] = item
 		result = append(result, item.status)
 	}

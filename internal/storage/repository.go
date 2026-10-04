@@ -338,18 +338,6 @@ func toService(row ServiceModel) domain.Service {
 	return domain.Service{ID: row.ID, GroupID: row.GroupID, Name: row.Name, URL: row.URL, IconKey: row.IconKey, IconMode: row.IconMode, IconURL: row.IconURL, IconAssetID: row.IconAssetID, WebCheckEnabled: row.WebCheckEnabled, Description: row.Description, Hidden: row.Hidden, Position: row.Position, Revision: row.Revision, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt}
 }
 
-func (r *Repository) MonitorLinks(ctx context.Context) ([]domain.Service, error) {
-	var rows []ServiceModel
-	if err := r.DB.WithContext(ctx).Order("id").Find(&rows).Error; err != nil {
-		return nil, err
-	}
-	links := make([]domain.Service, 0, len(rows))
-	for _, row := range rows {
-		links = append(links, toService(row))
-	}
-	return links, nil
-}
-
 func serviceModel(input domain.ServiceInput) ServiceModel {
 	return ServiceModel{GroupID: input.GroupID, Name: input.Name, URL: input.URL, IconKey: input.IconKey, IconMode: input.IconMode, IconURL: input.IconURL, IconAssetID: input.IconAssetID, WebCheckEnabled: input.WebCheckEnabled == nil || *input.WebCheckEnabled, Description: input.Description, Hidden: input.Hidden}
 }

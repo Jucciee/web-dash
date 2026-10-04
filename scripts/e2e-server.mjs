@@ -19,7 +19,10 @@ const fakeDocker = http.createServer((request, response) => {
 })
 await new Promise((resolve, reject) => { fakeDocker.once('error', reject); fakeDocker.listen(18081, '127.0.0.1', resolve) })
 const iconPNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64')
+let webChecks = 0
 const fakeWeb = http.createServer((request, response) => {
+  if (request.url === '/__checks') { response.setHeader('Content-Type', 'application/json'); response.end(JSON.stringify({ checks: webChecks })); return }
+  if (request.method === 'HEAD') webChecks++
   if (request.url === '/icon.png' || request.url === '/favicon.ico') { response.setHeader('Content-Type', 'image/png'); response.end(iconPNG); return }
   if (request.url === '/auth') { response.writeHead(401); response.end(); return }
   if (request.url === '/error') { response.writeHead(503); response.end(); return }

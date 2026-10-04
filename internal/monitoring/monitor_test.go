@@ -8,8 +8,77 @@ import (
 	"testing"
 	"time"
 
+	"homedashboard/internal/domain"
 	"homedashboard/internal/webfetch"
 )
+
+func TestOnlyExplicitRefreshStartsHTTPChecks(t *testing.T) {
+	var hits atomic.Int32
+	responseReady := make(chan struct{})
+	started := make(chan struct{}, 8)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		started <- struct{}{}
+		select {
+		case <-responseReady:
+			w.WriteHeader(200)
+		case <-r.Context().Done():
+		}
+	}))
+	defer server.Close()
+	client := webfetch.NewClient()
+	defer client.CloseIdleConnections()
+	monitor := New(client)
+	defer monitor.Close()
+	links := []domain.Service{{ID: "link", URL: server.URL, WebCheckEnabled: true}}
+	if statuses := monitor.Snapshot(links, false); statuses[0].State != "unknown" || statuses[0].Checking {
+		t.Fatal("a cached read started a check")
+	}
+	if hits.Load() != 0 {
+		t.Fatal("an idle monitor made a request")
+	}
+	monitor.Snapshot(links, true)
+	select {
+	case <-started:
+	case <-time.After(time.Second):
+		t.Fatal("page visit did not start an HTTP check")
+	}
+	for range 10 {
+		monitor.Snapshot(links, true)
+		monitor.Snapshot(links, false)
+	}
+	if hits.Load() != 1 {
+		t.Fatal("concurrent visits were not coalesced")
+	}
+	close(responseReady)
+	deadline := time.Now().Add(time.Second)
+	for monitor.Snapshot(links, false)[0].Checking {
+		if time.Now().After(deadline) {
+			t.Fatal("HTTP check never completed")
+		}
+		time.Sleep(time.Millisecond)
+	}
+	monitor.mu.Lock()
+	item := monitor.entries["link"]
+	item.started = time.Now().Add(-time.Minute)
+	monitor.entries["link"] = item
+	monitor.mu.Unlock()
+	for range 10 {
+		if statuses := monitor.Snapshot(links, false); statuses[0].Checking || statuses[0].State != "online" {
+			t.Fatal("reading an old result started another check")
+		}
+	}
+	monitor.Snapshot(links, true)
+	select {
+	case <-started:
+	case <-time.After(time.Second):
+		t.Fatal("the next visit did not refresh the result")
+	}
+	links[0].WebCheckEnabled = false
+	if statuses := monitor.Snapshot(links, true); statuses[0].State != "disabled" || statuses[0].Checking {
+		t.Fatal("disabled links were checked")
+	}
+}
 
 func TestHTTPObservations(t *testing.T) {
 	var fallback atomic.Int32

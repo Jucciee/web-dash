@@ -1126,7 +1126,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Read cached server-side HTTP observations; queue missing or stale checks */
+        /** Read cached server-side HTTP observations without initiating outbound checks */
         get: {
             parameters: {
                 query?: never;
@@ -1175,7 +1175,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Queue manual HTTP checks; coalesced with a 5s minimum interval */
+        /** Queue HTTP checks on page visit or manual request; coalesced with a 5s minimum interval */
         post: {
             parameters: {
                 query?: never;

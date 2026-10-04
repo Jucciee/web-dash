@@ -104,6 +104,11 @@ func TestLinkIconsAndWebChecks(t *testing.T) {
 		}
 	}
 	readImage("/services/" + link.ID + "/icon")
+	initial := decode[[]domain.WebStatus](t, b.request(t, "GET", "/dashboards/"+dashboard.ID+"/web-statuses", nil, 0, 200))
+	if len(initial) != 1 || initial[0].State != "unknown" || initial[0].Checking {
+		t.Fatal("reading statuses started a check")
+	}
+	b.request(t, "POST", "/dashboards/"+dashboard.ID+"/web-statuses/check", nil, 0, 200)
 	awaitState := func(state string) {
 		t.Helper()
 		deadline := time.Now().Add(3 * time.Second)
@@ -120,6 +125,7 @@ func TestLinkIconsAndWebChecks(t *testing.T) {
 	}
 	awaitState("online")
 	link = decode[domain.Service](t, b.request(t, "PATCH", "/services/"+link.ID, map[string]any{"url": target.URL + "/auth", "iconMode": "url", "iconUrl": target.URL + "/icon.png"}, link.Revision, 200))
+	b.request(t, "POST", "/dashboards/"+dashboard.ID+"/web-statuses/check", nil, 0, 200)
 	awaitState("auth")
 	readImage("/services/" + link.ID + "/icon")
 	link = decode[domain.Service](t, b.request(t, "PATCH", "/services/"+link.ID, map[string]any{"iconMode": "upload", "iconAssetId": asset, "webCheckEnabled": false}, link.Revision, 200))

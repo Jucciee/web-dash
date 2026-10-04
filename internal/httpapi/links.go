@@ -65,7 +65,7 @@ func (a *API) linkRoutes(private *gin.RouterGroup) {
 		}
 		c.Data(200, img.MIME, img.Data)
 	})
-	statuses := func(force bool) gin.HandlerFunc {
+	statuses := func(refresh bool) gin.HandlerFunc {
 		return func(c *gin.Context) {
 			dashboard, err := a.Store.Dashboard(c.Request.Context(), c.Param("id"))
 			if err != nil {
@@ -76,7 +76,7 @@ func (a *API) linkRoutes(private *gin.RouterGroup) {
 			for _, group := range dashboard.Groups {
 				links = append(links, group.Services...)
 			}
-			success(c, 200, a.Monitor.Snapshot(links, force))
+			success(c, 200, a.Monitor.Snapshot(links, refresh))
 		}
 	}
 	private.GET("/dashboards/:id/web-statuses", statuses(false))

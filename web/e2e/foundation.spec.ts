@@ -172,6 +172,20 @@ test('setup → card and group editing → reload → logout and login; responsi
   await expect(webCard.locator('.web-status')).toHaveAttribute('data-state', 'online')
   await expect(webCard.locator('img')).toBeVisible()
   await expect.poll(() => webCard.locator('img').evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0)
+  // Keeping the page open past 30s must neither re-check sites nor keep polling.
+  let statusRequests = 0
+  page.on('request', request => { if (request.url().includes('/web-statuses')) statusRequests++ })
+  await expect(page.getByText('웹 상태 · 페이지 접속 시 확인')).toBeVisible()
+  const checkCount = async () => (await (await page.request.get('http://127.0.0.1:18082/__checks')).json()).checks as number
+  const beforeIdle = await checkCount()
+  await page.waitForTimeout(31_000)
+  expect(await checkCount()).toBe(beforeIdle)
+  const requestsAfterIdle = statusRequests
+  await page.waitForTimeout(1500)
+  expect(statusRequests).toBe(requestsAfterIdle)
+  await page.reload()
+  await expect(webCard.locator('.web-status')).toHaveAttribute('data-state', 'online')
+  await expect.poll(checkCount).toBe(beforeIdle + 1)
   await page.getByRole('button', { name: '웹 상태 테스트 편집' }).click()
   await dialog.getByLabel('접속 주소').fill('http://127.0.0.1:18082/auth')
   await dialog.getByLabel('아이콘 표시').selectOption('url')

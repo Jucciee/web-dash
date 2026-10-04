@@ -3,7 +3,7 @@
   "info": {
     "title": "Home Dashboard API",
     "version": "0.3.0",
-    "description": "Implemented authentication, link/group management, themes/custom CSS, site/custom/uploaded icons, server-side periodic HTTP status checks, Nginx/Caddy import, and runtime Docker port discovery. Docker/host metrics and backups remain planned."
+    "description": "Implemented authentication, link/group management, themes/custom CSS, site/custom/uploaded icons, server-side HTTP status checks on page visit, Nginx/Caddy import, and runtime Docker port discovery. Docker/host metrics and backups remain planned."
   },
   "servers": [
     {
@@ -1058,7 +1058,7 @@
     },
     "/dashboards/{id}/web-statuses": {
       "get": {
-        "summary": "Read cached server-side HTTP observations; queue missing or stale checks",
+        "summary": "Read cached server-side HTTP observations without initiating outbound checks",
         "parameters": [
           {
             "name": "id",
@@ -1096,7 +1096,7 @@
     },
     "/dashboards/{id}/web-statuses/check": {
       "post": {
-        "summary": "Queue manual HTTP checks; coalesced with a 5s minimum interval",
+        "summary": "Queue HTTP checks on page visit or manual request; coalesced with a 5s minimum interval",
         "parameters": [
           {
             "name": "id",

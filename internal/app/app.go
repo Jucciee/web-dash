@@ -99,7 +99,7 @@ func New(cfg Config) (*App, error) {
 		}
 		return nil
 	}
-	monitor := monitoring.New(store, webClient)
+	monitor := monitoring.New(webClient)
 	api := &httpapi.API{Auth: authService, Store: store, Icons: iconStore, Monitor: monitor, Dashboard: &services.Dashboard{Store: store, ValidateIconAsset: validateAsset}, Imports: &imports.Service{Store: store, Docker: imports.EngineReader{Host: cfg.DockerHost}, ValidateIconAsset: validateAsset}, OnSetup: func() {
 		if err := os.Remove(tokenPath); err != nil && !os.IsNotExist(err) {
 			slog.Warn("could not remove consumed setup token file", "error", err)

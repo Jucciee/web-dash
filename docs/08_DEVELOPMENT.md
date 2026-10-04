@@ -1,6 +1,6 @@
 # 구현된 기본 골격
 
-2026-10-03 기준 링크 편집, 설정 분리·테마/CSS·가져오기, 사이트·이미지 주소·업로드 아이콘과 주기적인 웹 응답 확인을 구현했다. Docker는 폴더에서 찾은 Compose 파일과 실행 중인 컨테이너를 대조해 실제 공개 포트를 읽는다. Docker 사용량·상태 모니터링, 호스트 수집기, 백업은 후속 단계다.
+2026-10-04 기준 링크 편집, 설정 분리·테마/CSS·가져오기, 사이트·이미지 주소·업로드 아이콘과 페이지 접속 시 웹 응답 확인을 구현했다. Docker는 폴더에서 찾은 Compose 파일과 실행 중인 컨테이너를 대조해 실제 공개 포트를 읽는다. Docker 사용량·상태 모니터링, 호스트 수집기, 백업은 후속 단계다.
 
 ## 실제 폴더 구조
 
@@ -14,7 +14,7 @@ internal/services/      카드 입력 검사, 부분 수정 병합
 internal/imports/       프록시 후보 추출, Compose 폴더 검색, 조회 전용 Docker SDK
 internal/logging/       slog 설정, 콘솔·교체되는 파일 로그
 internal/icons/         이미지 검증·업로드 저장, 사이트 아이콘 검색·캐시
-internal/monitoring/    HTTP 상태 관측, 4개 worker, 30초 polling·공유 캐시
+internal/monitoring/    페이지 접속 시 HTTP 상태 관측, 4개 worker·공유 캐시
 internal/webfetch/      HTTP/HTTPS·DNS·redirect·timeout을 제한한 읽기 전용 client
 internal/storage/       GORM model, migration, 트랜잭션, revision
 internal/static/        SPA 배포 파일과 API 404 분리
@@ -63,7 +63,7 @@ preview는 사용자·대시보드 revision·만료 시각과 정규화한 후�
 
 `20261003_link_icons_monitoring` migration은 기존 링크와 관계를 보존하면서 icon mode·URL·asset ID와 웹 상태 확인 사용 여부를 추가한다. 기본 그룹·설명 문구만 링크 표현으로 바꾸고 사용자 편집 문구는 보존한다. 업로드 이미지의 SHA-256을 ID로 쓰며 `data/icons/`에 저장한다. GET 이미지와 upload 모두 인증을 요구하고 업로드에는 CSRF도 검사한다. 파일 이름을 서버 경로로 사용하지 않는다. 원격 HTML·이미지는 각각 256KiB, 아이콘 캐시는 최대 64개이며 같은 이미지 요청을 합친다. 원격 SVG는 제공하지 않는다.
 
-웹 관측은 DB edit revision과 별개로 메모리에 저장한다. 30초 background polling과 화면 조회 시 누락·오래된 항목 확인을 수행하고, 수동 확인은 5초 이내 요청과 진행 중 요청을 합친다. HEAD 미지원(405/501)은 GET으로 확인하며 본문은 읽지 않고 닫는다. 정상·인증 필요·HTTP 오류·접속 실패·timeout·TLS 오류를 구분한다. 클라이언트는 서버의 관측값을 조회하고 외부 사이트에 직접 요청하지 않는다. 로그에는 링크 ID·HTTP 코드·상태·시간만 남긴다.
+웹 관측은 DB edit revision과 별개로 메모리에 저장한다. 홈·링크 관리 페이지 접속과 링크 URL/확인 설정 변경 시 POST `/web-statuses/check`로 한 번 요청한다. 진행 중 요청과 5초 이내 재요청은 합친다. 서버 시작이나 주기적인 timer는 검사를 시작하지 않는다. GET `/web-statuses`는 캐시만 읽고 검사 완료까지 1초 간격으로 조회한 뒤 멈춘다. 오래된 결과 조회와 브라우저 focus/reconnect도 새 검사를 시작하지 않는다. 사용하지 않는 캐시는 조회 시 정리한다. HEAD 미지원(405/501)은 GET으로 확인하며 본문은 읽지 않고 닫는다. 정상·인증 필요·HTTP 오류·접속 실패·timeout·TLS 오류를 구분한다. 클라이언트는 서버의 관측값을 조회하고 외부 사이트에 직접 요청하지 않는다. 로그에는 링크 ID·HTTP 코드·상태·시간만 남긴다.
 
 Docker SDK는 OS 기본 named pipe/socket 또는 지정 endpoint를 사용하며 요청 hook이 HEAD/GET ping과 GET 목록만 허용한다. runtime Ports와 Compose config_files/working_dir 라벨로 대조하고 stopped 컨테이너는 제외한다. YAML에 적힌 published port를 실행 포트로 대체하지 않는다. Docker Desktop의 Windows 경로·WSL 호스트 경로 표기를 정규화한다.
 
