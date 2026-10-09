@@ -2,8 +2,7 @@ services:
   dashboard:
     image: home-dashboard:0.3.0
     build:
-      context: ..
-      dockerfile: deploy/Dockerfile
+      dockerfile: Dockerfile
     restart: unless-stopped
     ports:
       - "${DASHBOARD_BIND:-127.0.0.1}:${DASHBOARD_PORT:-8080}:8080"
