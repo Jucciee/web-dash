@@ -77,6 +77,6 @@ func Request(ctx context.Context, client *http.Client, method, address string) (
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", "HomeDashboard/0.3")
+	req.Header.Set("User-Agent", "web-dash/0.4")
 	return client.Do(req)
 }

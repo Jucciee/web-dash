@@ -1,5 +1,39 @@
 [
   {
+    "date": "2026-10-10",
+    "macrostructure": "Workbench",
+    "theme": "Existing Cobalt with saved user themes",
+    "enrichment": "none",
+    "nav": "Existing home bar and settings side-rail",
+    "footer": "Existing inline",
+    "brief": "Declarative API addon editor, private connection values, response selection and JSON sharing",
+    "critique": {
+      "Specificity": 5,
+      "Philosophy": 4,
+      "Hierarchy": 5,
+      "Execution": 4,
+      "Variety": 4,
+      "Restraint": 5
+    }
+  },
+  {
+    "date": "2026-10-09",
+    "macrostructure": "Workbench",
+    "theme": "Existing Cobalt with saved user themes",
+    "enrichment": "none",
+    "nav": "Existing home bar and settings side-rail",
+    "footer": "Existing inline",
+    "brief": "web-dash customization presets and scoped preview; real Docker/host status panels",
+    "critique": {
+      "Specificity": 5,
+      "Philosophy": 4,
+      "Hierarchy": 5,
+      "Execution": 4,
+      "Variety": 4,
+      "Restraint": 5
+    }
+  },
+  {
     "date": "2026-10-03",
     "macrostructure": "Index-First",
     "theme": "Cobalt",

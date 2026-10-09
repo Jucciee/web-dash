@@ -5,7 +5,8 @@ import { api } from '../api/client'
 import { ConnectionError, LoadingPage } from '../components/Feedback'
 import { AuthPage } from '../features/auth/AuthPage'
 import { DashboardPage } from '../features/dashboard/DashboardPage'
-import { RoadmapPage } from '../features/settings/RoadmapPage'
+import { MonitoringPage } from '../features/monitoring/MonitoringPage'
+import { AddonsPage } from '../features/addons/AddonsPage'
 import { SettingsPage } from '../features/settings/SettingsPage'
 import { ImportPage } from '../features/imports/ImportPage'
 import { AppShell } from './AppShell'
@@ -36,9 +37,10 @@ function Bootstrap() {
     <Route element={needsSetup ? <Navigate to="/setup" replace /> : authenticated ? <AppShell /> : <Navigate to="/login" replace />}>
       <Route index element={<DashboardPage />} />
       <Route path="imports/new" element={<Navigate to="/settings/imports" replace />} />
-      <Route path="connections" element={<RoadmapPage feature="connections" />} />
-      <Route path="hosts" element={<RoadmapPage feature="hosts" />} />
+      <Route path="connections" element={<MonitoringPage kind="docker" />} />
+      <Route path="hosts" element={<MonitoringPage kind="host" />} />
       <Route path="settings" element={<SettingsPage />} />
+      <Route path="settings/addons" element={<AddonsPage />} />
       <Route path="settings/services" element={<DashboardPage manage />} />
       <Route path="settings/imports" element={<ImportPage />} />
       <Route path="*" element={<NotFound />} />

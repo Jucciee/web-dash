@@ -7,7 +7,7 @@ export function ErrorNotice({ error, onRetry }: { error: unknown; onRetry?: () =
 }
 
 export function LoadingPage() {
-  return <main className="loading-page" role="status"><span className="wordmark">Dashboard<span className="brand-dot" /></span><p>대시보드를 불러오는 중…</p></main>
+  return <main className="loading-page" role="status"><span className="wordmark">web-dash<span className="brand-dot" /></span><p>대시보드를 불러오는 중…</p></main>
 }
 
 export function ConnectionError({ error, onRetry }: { error: unknown; onRetry: () => void }) {

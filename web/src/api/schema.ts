@@ -1383,6 +1383,553 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/monitoring/host": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read CPU, memory, disk and uptime of the explicitly labelled measurement environment; 5s shared cache */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["HostSnapshotEnvelope"];
+                    };
+                };
+                /** @description API error: 400, 401, 403, 404, 409, 413, 422, 500 or 502 */
+                default: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorEnvelope"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/monitoring/docker": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Engine metadata, all container states, health and bounded resource samples; 5s shared cache */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DockerSnapshotEnvelope"];
+                    };
+                };
+                /** @description API error: 400, 401, 403, 404, 409, 413, 422, 500 or 502 */
+                default: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorEnvelope"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/backgrounds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload a PNG/JPEG/WebP background, up to 8MiB, 6000px and 24 megapixels */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    "X-CSRF-Token": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        /** Format: binary */
+                        file: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Stored image ID */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["IconUploadEnvelope"];
+                    };
+                };
+                /** @description API error: 400, 401, 403, 404, 409, 413, 422, 500 or 502 */
+                default: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorEnvelope"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/backgrounds/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read an authenticated background image */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Raster background image */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "image/png": string;
+                        "image/jpeg": string;
+                        "image/webp": string;
+                    };
+                };
+                /** @description API error: 400, 401, 403, 404, 409, 413, 422, 500 or 502 */
+                default: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorEnvelope"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/addons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List installed API addons without credentials */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AddonListEnvelope"];
+                    };
+                };
+                /** @description API error: 400, 401, 403, 404, 409, 413, 422, 500 or 502 */
+                default: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorEnvelope"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Install a v1 declarative addon; encrypt secret inputs */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    "X-CSRF-Token": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AddonWrite"];
+                };
+            };
+            responses: {
+                /** @description Success */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AddonEnvelope"];
+                    };
+                };
+                /** @description API error: 400, 401, 403, 404, 409, 413, 422, 500 or 502 */
+                default: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorEnvelope"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/addons/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Test a draft request and preview bounded, redacted response choices without saving */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    "X-CSRF-Token": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AddonPreview"];
+                };
+            };
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AddonSnapshotEnvelope"];
+                    };
+                };
+                /** @description API error: 400, 401, 403, 404, 409, 413, 422, 500 or 502 */
+                default: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorEnvelope"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/addons/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read public addon configuration */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AddonEnvelope"];
+                    };
+                };
+                /** @description API error: 400, 401, 403, 404, 409, 413, 422, 500 or 502 */
+                default: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorEnvelope"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        /** Uninstall an addon and its saved credentials */
+        delete: {
+            parameters: {
+                query?: never;
+                header: {
+                    "X-CSRF-Token": string;
+                    /** @description Quoted revision, for example "1" */
+                    "If-Match": string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description API error: 400, 401, 403, 404, 409, 413, 422, 500 or 502 */
+                default: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorEnvelope"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /** Replace addon configuration with revision check; never return secret values */
+        patch: {
+            parameters: {
+                query?: never;
+                header: {
+                    "X-CSRF-Token": string;
+                    /** @description Quoted revision, for example "1" */
+                    "If-Match": string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AddonWrite"];
+                };
+            };
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AddonEnvelope"];
+                    };
+                };
+                /** @description API error: 400, 401, 403, 404, 409, 413, 422, 500 or 502 */
+                default: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorEnvelope"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/addons/{id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Read an enabled addon; 5s shared cache, no background collection */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    "X-CSRF-Token": string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AddonSnapshotEnvelope"];
+                    };
+                };
+                /** @description API error: 400, 401, 403, 404, 409, 413, 422, 500 or 502 */
+                default: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorEnvelope"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/addons/{id}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Move a widget in installed-addon order */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    "X-CSRF-Token": string;
+                    /** @description Quoted revision, for example "1" */
+                    "If-Match": string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AddonMove"];
+                };
+            };
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AddonListEnvelope"];
+                    };
+                };
+                /** @description API error: 400, 401, 403, 404, 409, 413, 422, 500 or 502 */
+                default: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorEnvelope"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1576,10 +2123,12 @@ export interface components {
             /** @enum {string} */
             theme: "light" | "dark" | "system";
             /** @enum {string} */
-            accent: "blue" | "green" | "amber" | "slate";
+            accent: "blue" | "green" | "amber" | "slate" | "violet" | "rose" | "custom";
             compact: boolean;
             /** @description UTF-8 maximum 32KiB. Applied only on home. */
             customCss: string;
+            appearance: components["schemas"]["Appearance"];
+            widgets: components["schemas"]["Widgets"];
             revision: number;
         };
         SettingsPatch: {
@@ -1588,10 +2137,12 @@ export interface components {
             /** @enum {string} */
             theme?: "light" | "dark" | "system";
             /** @enum {string} */
-            accent?: "blue" | "green" | "amber" | "slate";
+            accent?: "blue" | "green" | "amber" | "slate" | "violet" | "rose" | "custom";
             compact?: boolean;
             /** @description UTF-8 maximum 32KiB. Applied only on home. */
             customCss?: string;
+            appearance?: components["schemas"]["Appearance"];
+            widgets?: components["schemas"]["Widgets"];
         };
         ImportFile: {
             /** @description Unique relative virtual path, never a server filesystem path */
@@ -1713,6 +2264,229 @@ export interface components {
         IconUploadEnvelope: {
             data: components["schemas"]["IconUpload"];
             meta: components["schemas"]["Meta"];
+        };
+        Appearance: {
+            /** @enum {string} */
+            layout: "grid" | "rows";
+            columns: number;
+            /** @enum {string} */
+            width: "narrow" | "normal" | "wide" | "full";
+            /** @enum {string} */
+            cardStyle: "card" | "tile" | "list";
+            /** @enum {string} */
+            iconSize: "small" | "medium" | "large";
+            /** @enum {string} */
+            radius: "square" | "soft" | "round";
+            /** @enum {string} */
+            fontSize: "small" | "normal" | "large";
+            /** @enum {string} */
+            fontFamily: "noto" | "system" | "mono";
+            /** @enum {string} */
+            background: "plain" | "grid" | "dots" | "image";
+            backgroundImage: string;
+            backgroundDim: number;
+            accentColor: string;
+            showTitle: boolean;
+            showClock: boolean;
+            showSearch: boolean;
+            showIcons: boolean;
+            showDescriptions: boolean;
+            showUrls: boolean;
+            showWebStatus: boolean;
+            showGroupCounts: boolean;
+            showFooter: boolean;
+            collapsibleGroups: boolean;
+        };
+        Widgets: {
+            showHost: boolean;
+            showDocker: boolean;
+            /** @enum {integer} */
+            refreshSeconds: 0 | 10 | 30 | 60;
+            order: ("host" | "docker")[];
+        };
+        ResourceUsage: {
+            used: number;
+            total: number;
+            percent: number;
+        };
+        DiskUsage: {
+            path: string;
+            used: number;
+            total: number;
+            percent: number;
+        };
+        HostSnapshot: {
+            available: boolean;
+            name: string;
+            os: string;
+            /** @enum {string} */
+            scope: "system" | "runtime" | "host";
+            cpuPercent: number | null;
+            cpuCores: number;
+            memory: components["schemas"]["ResourceUsage"] | null;
+            disk: components["schemas"]["DiskUsage"] | null;
+            uptimeSeconds: number | null;
+            /** Format: date-time */
+            measuredAt: string;
+            warnings: string[];
+        };
+        ContainerSnapshot: {
+            id: string;
+            name: string;
+            image: string;
+            project: string;
+            state: string;
+            status: string;
+            health: string;
+            cpuPercent: number | null;
+            memory: components["schemas"]["ResourceUsage"] | null;
+            networkRx: number | null;
+            networkTx: number | null;
+            statsError: string;
+        };
+        DockerSnapshot: {
+            available: boolean;
+            name: string;
+            os: string;
+            version: string;
+            cpuCores: number;
+            memoryTotal: number;
+            running: number;
+            stopped: number;
+            containers: components["schemas"]["ContainerSnapshot"][];
+            /** Format: date-time */
+            measuredAt: string;
+            message: string;
+            warnings: string[];
+        };
+        HostSnapshotEnvelope: {
+            data: components["schemas"]["HostSnapshot"];
+            meta: components["schemas"]["Meta"];
+        };
+        DockerSnapshotEnvelope: {
+            data: components["schemas"]["DockerSnapshot"];
+            meta: components["schemas"]["Meta"];
+        };
+        AddonHeader: {
+            name: string;
+            value: string;
+        };
+        AddonInput: {
+            key: string;
+            label: string;
+            /** @enum {string} */
+            type: "text" | "secret";
+            required: boolean;
+            /** @description Only text inputs may define a default. Secret values are never part of a manifest. */
+            default: string;
+        };
+        AddonField: {
+            label: string;
+            /** @description JSON Pointer, e.g. /data/count or /items/0/name; empty means root */
+            path: string;
+            /** @enum {string} */
+            format: "text" | "number" | "percent" | "bytes" | "duration" | "boolean" | "count";
+            unit: string;
+            scale: number;
+            decimals: number;
+            valueMap: {
+                [key: string]: string;
+            };
+        };
+        AddonRequest: {
+            /** @enum {string} */
+            method: "GET" | "POST";
+            url: string;
+            headers: components["schemas"]["AddonHeader"][];
+            /** @description JSON POST body, maximum 16KiB before interpolation. Templates: {{key}}, {{key|url}}, {{key|json}}, {{key|base64}}. */
+            body: string;
+        };
+        AddonManifest: {
+            /** @constant */
+            schemaVersion: 1;
+            name: string;
+            /** @enum {string} */
+            icon: "server" | "photos" | "media" | "files" | "code" | "home" | "network" | "database";
+            /** @enum {string} */
+            display: "stats" | "list";
+            /** @enum {integer} */
+            refreshSeconds: 0 | 10 | 30 | 60 | 300;
+            request: components["schemas"]["AddonRequest"];
+            inputs: components["schemas"]["AddonInput"][];
+            fields: components["schemas"]["AddonField"][];
+        };
+        Addon: {
+            /** Format: uuid */
+            id: string;
+            manifest: components["schemas"]["AddonManifest"];
+            values: {
+                [key: string]: string;
+            };
+            configuredSecrets: string[];
+            enabled: boolean;
+            position: number;
+            revision: number;
+        };
+        AddonWrite: {
+            manifest: components["schemas"]["AddonManifest"];
+            values: {
+                [key: string]: string;
+            };
+            /** @description Write-only secret input values. Omit a key to preserve it when editing the same API origin; empty string clears it. */
+            secrets: {
+                [key: string]: string;
+            };
+            enabled: boolean;
+        };
+        AddonPreview: {
+            manifest: components["schemas"]["AddonManifest"];
+            values: {
+                [key: string]: string;
+            };
+            /** @description Write-only secret input values. Omit a key to preserve it when editing the same API origin; empty string clears it. */
+            secrets: {
+                [key: string]: string;
+            };
+            enabled: boolean;
+            id: string;
+            revision: number;
+        };
+        AddonValue: {
+            label: string;
+            value: string;
+            unit: string;
+            missing: boolean;
+        };
+        AddonChoice: {
+            path: string;
+            value: string;
+            type: string;
+        };
+        AddonSnapshot: {
+            available: boolean;
+            httpStatus: number;
+            latencyMs: number;
+            /** Format: date-time */
+            measuredAt: string;
+            message: string;
+            values: components["schemas"]["AddonValue"][];
+            choices: components["schemas"]["AddonChoice"][];
+        };
+        AddonListEnvelope: {
+            data: components["schemas"]["Addon"][];
+            meta: components["schemas"]["Meta"];
+        };
+        AddonEnvelope: {
+            data: components["schemas"]["Addon"];
+            meta: components["schemas"]["Meta"];
+        };
+        AddonSnapshotEnvelope: {
+            data: components["schemas"]["AddonSnapshot"];
+            meta: components["schemas"]["Meta"];
+        };
+        AddonMove: {
+            /** @enum {integer} */
+            direction: -1 | 1;
         };
     };
     responses: never;

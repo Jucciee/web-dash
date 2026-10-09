@@ -1,4 +1,4 @@
-import type { AuthResult, Credentials, Dashboard, Group, Layout, Service, ServiceInput, ServicePatch, SetupInput, Settings, SettingsPatch, ImportInput, ImportPreview, DockerScanInput, ImportCommit, ImportResult, WebStatus } from './types'
+import type { AuthResult, Credentials, Dashboard, Group, Layout, Service, ServiceInput, ServicePatch, SetupInput, Settings, SettingsPatch, ImportInput, ImportPreview, DockerScanInput, ImportCommit, ImportResult, WebStatus, HostSnapshot, DockerSnapshot, Addon, AddonWrite, AddonPreview, AddonSnapshot } from './types'
 
 export class APIError extends Error {
   constructor(public status: number, public code: string, message: string, public requestId?: string) {
@@ -80,6 +80,16 @@ export const api = {
   deleteGroup: (group: Group) => request<void>(`/groups/${group.id}`, { method: 'DELETE', revision: group.revision }),
   saveLayout: (dashboard: Dashboard, body: Layout) => request<Dashboard>(`/dashboards/${dashboard.id}/layout`, { method: 'PUT', body, revision: dashboard.revision }),
   settings: () => request<Settings>('/settings'),
+  addons: () => request<Addon[]>('/addons'),
+  createAddon: (body: AddonWrite) => request<Addon>('/addons', { method: 'POST', body }),
+  updateAddon: (addon: Addon, body: AddonWrite) => request<Addon>(`/addons/${addon.id}`, { method: 'PATCH', body, revision: addon.revision }),
+  deleteAddon: (addon: Addon) => request<void>(`/addons/${addon.id}`, { method: 'DELETE', revision: addon.revision }),
+  moveAddon: (addon: Addon, direction: -1 | 1) => request<Addon[]>(`/addons/${addon.id}/move`, { method: 'POST', body: { direction }, revision: addon.revision }),
+  previewAddon: (body: AddonPreview) => request<AddonSnapshot>('/addons/preview', { method: 'POST', body }),
+  readAddon: (id: string) => request<AddonSnapshot>(`/addons/${id}/read`, { method: 'POST' }),
+  hostStatus: () => request<HostSnapshot>('/monitoring/host'),
+  dockerStatus: () => request<DockerSnapshot>('/monitoring/docker'),
+  uploadBackground: (file: File) => { const body = new FormData(); body.set('file', file); return request<{ id: string }>('/backgrounds', { method: 'POST', body }) },
   updateSettings: (body: SettingsPatch, revision: number) => request<Settings>('/settings', { method: 'PATCH', body, revision }),
   importPreview: (body: ImportInput) => request<ImportPreview>('/imports/preview', { method: 'POST', body }),
   scanDocker: (body: DockerScanInput) => request<ImportPreview>('/imports/docker/scan', { method: 'POST', body }),

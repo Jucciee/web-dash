@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "name": "쿠키 인증 API",
+  "icon": "network",
+  "display": "list",
+  "refreshSeconds": 60,
+  "request": {
+    "method": "GET",
+    "url": "{{baseUrl}}/api/status",
+    "headers": [{ "name": "Cookie", "value": "{{cookie}}" }],
+    "body": ""
+  },
+  "inputs": [
+    { "key": "baseUrl", "label": "서버 주소", "type": "text", "required": true, "default": "" },
+    { "key": "cookie", "label": "Cookie 값", "type": "secret", "required": true, "default": "" }
+  ],
+  "fields": [
+    { "label": "항목", "path": "/items", "format": "count", "unit": "개", "scale": 1, "decimals": 0, "valueMap": {} },
+    { "label": "첫 항목", "path": "/items/0/name", "format": "text", "unit": "", "scale": 1, "decimals": 0, "valueMap": {} },
+    { "label": "온라인", "path": "/online", "format": "boolean", "unit": "", "scale": 1, "decimals": 0, "valueMap": { "true": "연결됨", "false": "오프라인" } }
+  ]
+}

@@ -1,9 +1,9 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Home Dashboard API",
-    "version": "0.3.0",
-    "description": "Implemented authentication, link/group management, themes/custom CSS, site/custom/uploaded icons, server-side HTTP status checks on page visit, Nginx/Caddy import, and runtime Docker port discovery. Docker/host metrics and backups remain planned."
+    "title": "web-dash API",
+    "version": "0.4.0",
+    "description": "web-dash: authentication, link/group management, visual customization and widgets, declarative JSON API addons with encrypted secret inputs, uploaded backgrounds and icons, home CSS, HTTP checks, Nginx/Caddy import, Docker discovery and read-only Docker/host metrics."
   },
   "servers": [
     {
@@ -1314,6 +1314,551 @@
           }
         }
       }
+    },
+    "/monitoring/host": {
+      "get": {
+        "summary": "Read CPU, memory, disk and uptime of the explicitly labelled measurement environment; 5s shared cache",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HostSnapshotEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error: 400, 401, 403, 404, 409, 413, 422, 500 or 502",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/monitoring/docker": {
+      "get": {
+        "summary": "Read Engine metadata, all container states, health and bounded resource samples; 5s shared cache",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DockerSnapshotEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error: 400, 401, 403, 404, 409, 413, 422, 500 or 502",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/backgrounds": {
+      "post": {
+        "summary": "Upload a PNG/JPEG/WebP background, up to 8MiB, 6000px and 24 megapixels",
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": [
+                  "file"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Stored image ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IconUploadEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error: 400, 401, 403, 404, 409, 413, 422, 500 or 502",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/backgrounds/{id}": {
+      "get": {
+        "summary": "Read an authenticated background image",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Raster background image",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error: 400, 401, 403, 404, 409, 413, 422, 500 or 502",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/addons": {
+      "get": {
+        "summary": "List installed API addons without credentials",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddonListEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error: 400, 401, 403, 404, 409, 413, 422, 500 or 502",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Install a v1 declarative addon; encrypt secret inputs",
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddonWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddonEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error: 400, 401, 403, 404, 409, 413, 422, 500 or 502",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/addons/preview": {
+      "post": {
+        "summary": "Test a draft request and preview bounded, redacted response choices without saving",
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddonPreview"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddonSnapshotEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error: 400, 401, 403, 404, 409, 413, 422, 500 or 502",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/addons/{id}": {
+      "get": {
+        "summary": "Read public addon configuration",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddonEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error: 400, 401, 403, 404, 409, 413, 422, 500 or 502",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Replace addon configuration with revision check; never return secret values",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\"[1-9][0-9]*\"$"
+            },
+            "description": "Quoted revision, for example \"1\""
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddonWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddonEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error: 400, 401, 403, 404, 409, 413, 422, 500 or 502",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Uninstall an addon and its saved credentials",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\"[1-9][0-9]*\"$"
+            },
+            "description": "Quoted revision, for example \"1\""
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "default": {
+            "description": "API error: 400, 401, 403, 404, 409, 413, 422, 500 or 502",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/addons/{id}/read": {
+      "post": {
+        "summary": "Read an enabled addon; 5s shared cache, no background collection",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddonSnapshotEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error: 400, 401, 403, 404, 409, 413, 422, 500 or 502",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/addons/{id}/move": {
+      "post": {
+        "summary": "Move a widget in installed-addon order",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\"[1-9][0-9]*\"$"
+            },
+            "description": "Quoted revision, for example \"1\""
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddonMove"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddonListEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error: 400, 401, 403, 404, 409, 413, 422, 500 or 502",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2016,7 +2561,10 @@
               "blue",
               "green",
               "amber",
-              "slate"
+              "slate",
+              "violet",
+              "rose",
+              "custom"
             ]
           },
           "compact": {
@@ -2025,6 +2573,12 @@
           "customCss": {
             "type": "string",
             "description": "UTF-8 maximum 32KiB. Applied only on home."
+          },
+          "appearance": {
+            "$ref": "#/components/schemas/Appearance"
+          },
+          "widgets": {
+            "$ref": "#/components/schemas/Widgets"
           },
           "revision": {
             "type": "integer",
@@ -2038,6 +2592,8 @@
           "accent",
           "compact",
           "customCss",
+          "appearance",
+          "widgets",
           "revision"
         ],
         "additionalProperties": false
@@ -2068,7 +2624,10 @@
               "blue",
               "green",
               "amber",
-              "slate"
+              "slate",
+              "violet",
+              "rose",
+              "custom"
             ]
           },
           "compact": {
@@ -2077,6 +2636,12 @@
           "customCss": {
             "type": "string",
             "description": "UTF-8 maximum 32KiB. Applied only on home."
+          },
+          "appearance": {
+            "$ref": "#/components/schemas/Appearance"
+          },
+          "widgets": {
+            "$ref": "#/components/schemas/Widgets"
           }
         },
         "required": [],
@@ -2542,6 +3107,980 @@
         "required": [
           "data",
           "meta"
+        ],
+        "additionalProperties": false
+      },
+      "Appearance": {
+        "type": "object",
+        "properties": {
+          "layout": {
+            "type": "string",
+            "enum": [
+              "grid",
+              "rows"
+            ]
+          },
+          "columns": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 6
+          },
+          "width": {
+            "type": "string",
+            "enum": [
+              "narrow",
+              "normal",
+              "wide",
+              "full"
+            ]
+          },
+          "cardStyle": {
+            "type": "string",
+            "enum": [
+              "card",
+              "tile",
+              "list"
+            ]
+          },
+          "iconSize": {
+            "type": "string",
+            "enum": [
+              "small",
+              "medium",
+              "large"
+            ]
+          },
+          "radius": {
+            "type": "string",
+            "enum": [
+              "square",
+              "soft",
+              "round"
+            ]
+          },
+          "fontSize": {
+            "type": "string",
+            "enum": [
+              "small",
+              "normal",
+              "large"
+            ]
+          },
+          "fontFamily": {
+            "type": "string",
+            "enum": [
+              "noto",
+              "system",
+              "mono"
+            ]
+          },
+          "background": {
+            "type": "string",
+            "enum": [
+              "plain",
+              "grid",
+              "dots",
+              "image"
+            ]
+          },
+          "backgroundImage": {
+            "type": "string",
+            "pattern": "^([a-f0-9]{64})?$"
+          },
+          "backgroundDim": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 90
+          },
+          "accentColor": {
+            "type": "string",
+            "pattern": "^(#[a-fA-F0-9]{6})?$"
+          },
+          "showTitle": {
+            "type": "boolean"
+          },
+          "showClock": {
+            "type": "boolean"
+          },
+          "showSearch": {
+            "type": "boolean"
+          },
+          "showIcons": {
+            "type": "boolean"
+          },
+          "showDescriptions": {
+            "type": "boolean"
+          },
+          "showUrls": {
+            "type": "boolean"
+          },
+          "showWebStatus": {
+            "type": "boolean"
+          },
+          "showGroupCounts": {
+            "type": "boolean"
+          },
+          "showFooter": {
+            "type": "boolean"
+          },
+          "collapsibleGroups": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "layout",
+          "columns",
+          "width",
+          "cardStyle",
+          "iconSize",
+          "radius",
+          "fontSize",
+          "fontFamily",
+          "background",
+          "backgroundImage",
+          "backgroundDim",
+          "accentColor",
+          "showTitle",
+          "showClock",
+          "showSearch",
+          "showIcons",
+          "showDescriptions",
+          "showUrls",
+          "showWebStatus",
+          "showGroupCounts",
+          "showFooter",
+          "collapsibleGroups"
+        ],
+        "additionalProperties": false
+      },
+      "Widgets": {
+        "type": "object",
+        "properties": {
+          "showHost": {
+            "type": "boolean"
+          },
+          "showDocker": {
+            "type": "boolean"
+          },
+          "refreshSeconds": {
+            "type": "integer",
+            "enum": [
+              0,
+              10,
+              30,
+              60
+            ]
+          },
+          "order": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "host",
+                "docker"
+              ]
+            },
+            "minItems": 2,
+            "maxItems": 2,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "showHost",
+          "showDocker",
+          "refreshSeconds",
+          "order"
+        ],
+        "additionalProperties": false
+      },
+      "ResourceUsage": {
+        "type": "object",
+        "properties": {
+          "used": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "percent": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "used",
+          "total",
+          "percent"
+        ],
+        "additionalProperties": false
+      },
+      "DiskUsage": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "used": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "percent": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "path",
+          "used",
+          "total",
+          "percent"
+        ],
+        "additionalProperties": false
+      },
+      "HostSnapshot": {
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "os": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "system",
+              "runtime",
+              "host"
+            ]
+          },
+          "cpuPercent": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "cpuCores": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "memory": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResourceUsage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "disk": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DiskUsage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "uptimeSeconds": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "measuredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "available",
+          "name",
+          "os",
+          "scope",
+          "cpuPercent",
+          "cpuCores",
+          "memory",
+          "disk",
+          "uptimeSeconds",
+          "measuredAt",
+          "warnings"
+        ],
+        "additionalProperties": false
+      },
+      "ContainerSnapshot": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "image": {
+            "type": "string"
+          },
+          "project": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "health": {
+            "type": "string"
+          },
+          "cpuPercent": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "memory": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResourceUsage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "networkRx": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "networkTx": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "statsError": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "image",
+          "project",
+          "state",
+          "status",
+          "health",
+          "cpuPercent",
+          "memory",
+          "networkRx",
+          "networkTx",
+          "statsError"
+        ],
+        "additionalProperties": false
+      },
+      "DockerSnapshot": {
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "os": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "cpuCores": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "memoryTotal": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "running": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "stopped": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "containers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContainerSnapshot"
+            }
+          },
+          "measuredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "message": {
+            "type": "string"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "available",
+          "name",
+          "os",
+          "version",
+          "cpuCores",
+          "memoryTotal",
+          "running",
+          "stopped",
+          "containers",
+          "measuredAt",
+          "message",
+          "warnings"
+        ],
+        "additionalProperties": false
+      },
+      "HostSnapshotEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/HostSnapshot"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "additionalProperties": false
+      },
+      "DockerSnapshotEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/DockerSnapshot"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "additionalProperties": false
+      },
+      "AddonHeader": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "value": {
+            "type": "string",
+            "maxLength": 8192
+          }
+        },
+        "required": [
+          "name",
+          "value"
+        ],
+        "additionalProperties": false
+      },
+      "AddonInput": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_]{0,39}$"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "secret"
+            ]
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "default": {
+            "type": "string",
+            "description": "Only text inputs may define a default. Secret values are never part of a manifest."
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "type",
+          "required",
+          "default"
+        ],
+        "additionalProperties": false
+      },
+      "AddonField": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "path": {
+            "type": "string",
+            "description": "JSON Pointer, e.g. /data/count or /items/0/name; empty means root"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "text",
+              "number",
+              "percent",
+              "bytes",
+              "duration",
+              "boolean",
+              "count"
+            ]
+          },
+          "unit": {
+            "type": "string",
+            "maxLength": 24
+          },
+          "scale": {
+            "type": "number"
+          },
+          "decimals": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4
+          },
+          "valueMap": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "label",
+          "path",
+          "format",
+          "unit",
+          "scale",
+          "decimals",
+          "valueMap"
+        ],
+        "additionalProperties": false
+      },
+      "AddonRequest": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "type": "string",
+            "enum": [
+              "GET",
+              "POST"
+            ]
+          },
+          "url": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "headers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AddonHeader"
+            }
+          },
+          "body": {
+            "type": "string",
+            "description": "JSON POST body, maximum 16KiB before interpolation. Templates: {{key}}, {{key|url}}, {{key|json}}, {{key|base64}}."
+          }
+        },
+        "required": [
+          "method",
+          "url",
+          "headers",
+          "body"
+        ],
+        "additionalProperties": false
+      },
+      "AddonManifest": {
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "icon": {
+            "type": "string",
+            "enum": [
+              "server",
+              "photos",
+              "media",
+              "files",
+              "code",
+              "home",
+              "network",
+              "database"
+            ]
+          },
+          "display": {
+            "type": "string",
+            "enum": [
+              "stats",
+              "list"
+            ]
+          },
+          "refreshSeconds": {
+            "type": "integer",
+            "enum": [
+              0,
+              10,
+              30,
+              60,
+              300
+            ]
+          },
+          "request": {
+            "$ref": "#/components/schemas/AddonRequest"
+          },
+          "inputs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AddonInput"
+            }
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AddonField"
+            },
+            "minItems": 1,
+            "maxItems": 16
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "name",
+          "icon",
+          "display",
+          "refreshSeconds",
+          "request",
+          "inputs",
+          "fields"
+        ],
+        "additionalProperties": false
+      },
+      "Addon": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "manifest": {
+            "$ref": "#/components/schemas/AddonManifest"
+          },
+          "values": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "configuredSecrets": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "id",
+          "manifest",
+          "values",
+          "configuredSecrets",
+          "enabled",
+          "position",
+          "revision"
+        ],
+        "additionalProperties": false
+      },
+      "AddonWrite": {
+        "type": "object",
+        "properties": {
+          "manifest": {
+            "$ref": "#/components/schemas/AddonManifest"
+          },
+          "values": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "secrets": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Write-only secret input values. Omit a key to preserve it when editing the same API origin; empty string clears it."
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "manifest",
+          "values",
+          "secrets",
+          "enabled"
+        ],
+        "additionalProperties": false
+      },
+      "AddonPreview": {
+        "type": "object",
+        "properties": {
+          "manifest": {
+            "$ref": "#/components/schemas/AddonManifest"
+          },
+          "values": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "secrets": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Write-only secret input values. Omit a key to preserve it when editing the same API origin; empty string clears it."
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "manifest",
+          "values",
+          "secrets",
+          "enabled",
+          "id",
+          "revision"
+        ],
+        "additionalProperties": false
+      },
+      "AddonValue": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "missing": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "label",
+          "value",
+          "unit",
+          "missing"
+        ],
+        "additionalProperties": false
+      },
+      "AddonChoice": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "value",
+          "type"
+        ],
+        "additionalProperties": false
+      },
+      "AddonSnapshot": {
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "httpStatus": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "latencyMs": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "measuredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "message": {
+            "type": "string"
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AddonValue"
+            }
+          },
+          "choices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AddonChoice"
+            }
+          }
+        },
+        "required": [
+          "available",
+          "httpStatus",
+          "latencyMs",
+          "measuredAt",
+          "message",
+          "values",
+          "choices"
+        ],
+        "additionalProperties": false
+      },
+      "AddonListEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Addon"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "additionalProperties": false
+      },
+      "AddonEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Addon"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "additionalProperties": false
+      },
+      "AddonSnapshotEnvelope": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AddonSnapshot"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "additionalProperties": false
+      },
+      "AddonMove": {
+        "type": "object",
+        "properties": {
+          "direction": {
+            "type": "integer",
+            "enum": [
+              -1,
+              1
+            ]
+          }
+        },
+        "required": [
+          "direction"
         ],
         "additionalProperties": false
       }

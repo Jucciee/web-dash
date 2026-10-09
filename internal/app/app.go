@@ -11,7 +11,9 @@ import (
 
 	"github.com/alexedwards/scs/gormstore"
 	"github.com/alexedwards/scs/v2"
+	"homedashboard/internal/addons"
 	"homedashboard/internal/auth"
+	"homedashboard/internal/backgrounds"
 	"homedashboard/internal/domain"
 	"homedashboard/internal/httpapi"
 	"homedashboard/internal/icons"
@@ -19,6 +21,7 @@ import (
 	"homedashboard/internal/monitoring"
 	"homedashboard/internal/services"
 	"homedashboard/internal/storage"
+	"homedashboard/internal/telemetry"
 	"homedashboard/internal/webfetch"
 )
 
@@ -47,6 +50,19 @@ func New(cfg Config) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
+	addonKey, err := persistentSecret(filepath.Join(cfg.DataDir, "addon-secret.key"))
+	if err != nil {
+		return nil, err
+	}
+	addonService, err := addons.New(store, addonKey)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if !completed {
+			addonService.Close()
+		}
+	}()
 	needsSetup, err := store.NeedsSetup(context.Background())
 	if err != nil {
 		return nil, err
@@ -100,14 +116,27 @@ func New(cfg Config) (*App, error) {
 		return nil
 	}
 	monitor := monitoring.New(webClient)
+	metrics := telemetry.New(telemetry.Config{DockerHost: cfg.DockerHost, HostProc: cfg.HostProc, HostSys: cfg.HostSys, HostRoot: cfg.HostRoot, HostDisk: cfg.HostDisk, HostName: cfg.HostName})
+	backgroundStore, err := backgrounds.New(filepath.Join(cfg.DataDir, "backgrounds"))
+	if err != nil {
+		metrics.Close()
+		monitor.Close()
+		sessionStore.StopCleanup()
+		webClient.CloseIdleConnections()
+		return nil, err
+	}
 	api := &httpapi.API{Auth: authService, Store: store, Icons: iconStore, Monitor: monitor, Dashboard: &services.Dashboard{Store: store, ValidateIconAsset: validateAsset}, Imports: &imports.Service{Store: store, Docker: imports.EngineReader{Host: cfg.DockerHost}, ValidateIconAsset: validateAsset}, OnSetup: func() {
 		if err := os.Remove(tokenPath); err != nil && !os.IsNotExist(err) {
 			slog.Warn("could not remove consumed setup token file", "error", err)
 		}
 	}}
+	api.Telemetry, api.Backgrounds = metrics, backgroundStore
+	api.Addons = addonService
 	completed = true
 	return &App{Handler: httpapi.Wrap(api.Router(cfg.StaticDir), sessions.LoadAndSave, csrfKey, cfg.CookieSecure), close: func() error {
+		addonService.Close()
 		monitor.Close()
+		metrics.Close()
 		webClient.CloseIdleConnections()
 		sessionStore.StopCleanup()
 		return pool.Close()

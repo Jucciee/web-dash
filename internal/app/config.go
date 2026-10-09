@@ -21,6 +21,11 @@ type Config struct {
 	LogFormat    string `envconfig:"LOG_FORMAT" default:"text"`
 	LogFile      string `envconfig:"LOG_FILE"`
 	DockerHost   string `envconfig:"DOCKER_HOST"`
+	HostProc     string `envconfig:"HOST_PROC"`
+	HostSys      string `envconfig:"HOST_SYS"`
+	HostRoot     string `envconfig:"HOST_ROOT"`
+	HostDisk     string `envconfig:"HOST_DISK"`
+	HostName     string `envconfig:"HOST_NAME"`
 }
 
 func LoadConfig() (Config, error) {

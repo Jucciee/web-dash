@@ -1,0 +1,40 @@
+# Optional Linux home-server overlay:
+# docker compose -f compose.yaml -f compose.monitoring.yaml up -d --build
+services:
+  dashboard:
+    environment:
+      DASHBOARD_DOCKER_HOST: tcp://docker-proxy:2375
+      DASHBOARD_HOST_PROC: /host/proc
+      DASHBOARD_HOST_SYS: /host/sys
+      DASHBOARD_HOST_ROOT: /host/root
+      DASHBOARD_HOST_DISK: /host/root
+      DASHBOARD_HOST_NAME: "${DASHBOARD_HOST_NAME:-home-server}"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host/root:ro,rslave
+    networks:
+      - default
+      - monitoring
+    depends_on:
+      - docker-proxy
+
+  docker-proxy:
+    image: ghcr.io/tecnativa/docker-socket-proxy:v0.4.2
+    restart: unless-stopped
+    environment:
+      CONTAINERS: "1"
+      INFO: "1"
+      PING: "1"
+      VERSION: "1"
+      POST: "0"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - monitoring
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  monitoring:
+    internal: true

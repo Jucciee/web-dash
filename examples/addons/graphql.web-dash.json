@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "name": "GraphQL API",
+  "icon": "database",
+  "display": "stats",
+  "refreshSeconds": 60,
+  "request": {
+    "method": "POST",
+    "url": "{{baseUrl}}/graphql",
+    "headers": [{ "name": "X-API-Key", "value": "{{apiKey}}" }],
+    "body": "{\"query\":{{query|json}}}"
+  },
+  "inputs": [
+    { "key": "baseUrl", "label": "서버 주소", "type": "text", "required": true, "default": "" },
+    { "key": "apiKey", "label": "API 키", "type": "secret", "required": true, "default": "" },
+    { "key": "query", "label": "조회 쿼리", "type": "text", "required": true, "default": "{ statistics { count online } }" }
+  ],
+  "fields": [
+    { "label": "항목", "path": "/data/statistics/count", "format": "number", "unit": "개", "scale": 1, "decimals": 0, "valueMap": {} },
+    { "label": "온라인", "path": "/data/statistics/online", "format": "boolean", "unit": "", "scale": 1, "decimals": 0, "valueMap": {} }
+  ]
+}

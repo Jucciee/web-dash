@@ -14,7 +14,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/gorilla/csrf"
+	"homedashboard/internal/addons"
 	"homedashboard/internal/auth"
+	"homedashboard/internal/backgrounds"
 	"homedashboard/internal/domain"
 	"homedashboard/internal/icons"
 	"homedashboard/internal/imports"
@@ -22,16 +24,20 @@ import (
 	"homedashboard/internal/services"
 	"homedashboard/internal/static"
 	"homedashboard/internal/storage"
+	"homedashboard/internal/telemetry"
 )
 
 type API struct {
-	Auth      *auth.Service
-	Dashboard *services.Dashboard
-	Store     *storage.Repository
-	OnSetup   func()
-	Imports   *imports.Service
-	Icons     *icons.Store
-	Monitor   *monitoring.Monitor
+	Auth        *auth.Service
+	Dashboard   *services.Dashboard
+	Store       *storage.Repository
+	OnSetup     func()
+	Imports     *imports.Service
+	Icons       *icons.Store
+	Monitor     *monitoring.Monitor
+	Telemetry   *telemetry.Collector
+	Backgrounds *backgrounds.Store
+	Addons      *addons.Service
 }
 
 func (a *API) Router(staticDir string) http.Handler {
@@ -72,6 +78,9 @@ func (a *API) Router(staticDir string) http.Handler {
 		c.Next()
 	})
 	a.settingsRoutes(private)
+	a.telemetryRoutes(private)
+	a.addonRoutes(private)
+	a.backgroundRoutes(private)
 	a.importRoutes(private)
 	a.linkRoutes(private)
 	private.GET("/me", func(c *gin.Context) {
@@ -375,6 +384,9 @@ func Wrap(next http.Handler, sessions func(http.Handler) http.Handler, key []byt
 		}
 		if r.Method == http.MethodPost && r.URL.Path == "/api/v1/icons" {
 			bodyLimit = icons.MaxUpload + (64 << 10)
+		}
+		if r.Method == http.MethodPost && r.URL.Path == "/api/v1/backgrounds" {
+			bodyLimit = backgrounds.MaxUpload + (64 << 10)
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, bodyLimit)
 		metrics := httpsnoop.CaptureMetrics(inner, w, r)

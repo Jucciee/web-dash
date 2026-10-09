@@ -1,9 +1,13 @@
 {
-  "date": "2026-10-03",
-  "framework": "React + TypeScript + Vite (new project)",
-  "existingFonts": [],
-  "existingPalette": null,
-  "motion": "none",
+  "date": "2026-10-10",
+  "framework": "React + TypeScript + Vite",
+  "existingFonts": [
+    "Space Grotesk",
+    "Noto Sans KR Variable"
+  ],
+  "existingPalette": "Cobalt OKLCH tokens in tokens.css",
+  "motion": "CSS only; reduced motion supported",
   "spacing": "4pt",
-  "source": "README.md and docs/04_FRONTEND_GUIDE.md"
+  "scope": "In-place visual settings, scoped preview, Docker/host panels and declarative API addon editor/widgets",
+  "source": "web/package.json, tokens.css, web/src/styles/global.css"
 }

@@ -10,6 +10,8 @@ export function Appearance({ home }: { home: boolean }) {
       document.documentElement.dataset.theme = data.theme === 'system' ? (media.matches ? 'dark' : 'light') : data.theme
       document.documentElement.dataset.accent = data.accent
       document.documentElement.dataset.compact = String(data.compact)
+      document.documentElement.style.setProperty('--home-accent-input', /^#[a-f\d]{6}$/i.test(data.appearance.accentColor) ? data.appearance.accentColor : '#356edb')
+      document.title = `${data.title} · web-dash`
     }
     apply()
     media.addEventListener('change', apply)

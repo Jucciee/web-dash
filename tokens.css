@@ -1,5 +1,15 @@
 /* Hallmark · macrostructure: Catalogue · tone: utilitarian · anchor hue: cobalt */
-:root {
+:where(:root, [data-appearance]) {
+  --font-system: system-ui, 'Segoe UI', sans-serif;
+  --home-max-width: 1328px;
+  --home-columns: 3;
+  --home-icon-size: 40px;
+  --home-radius: var(--radius-md);
+  --home-accent-input: oklch(55% 0.15 255);
+  --home-dim: 60%;
+  --home-wallpaper: none;
+  --color-pattern: color-mix(in oklch, var(--color-rule) 35%, transparent);
+  --color-wallpaper-overlay: color-mix(in oklch, var(--color-paper) var(--home-dim), transparent);
   --color-paper: oklch(98.5% 0.004 250);
   --color-surface: oklch(99.5% 0.002 250);
   --color-sidebar: oklch(96.6% 0.006 250);
@@ -50,7 +60,7 @@
   --z-toast: 500;
 }
 
-:root[data-theme='dark'] {
+:where(:root, [data-appearance])[data-theme='dark'] {
   --color-paper: oklch(22% 0.014 258);
   --color-surface: oklch(26% 0.016 258);
   --color-sidebar: oklch(24% 0.015 258);
@@ -71,24 +81,30 @@
   --color-warning: oklch(80% 0.13 68);
   --color-backdrop: oklch(12% 0.014 258 / 0.6);
 }
-:root[data-accent='green'] {
+:where(:root, [data-appearance])[data-accent='green'] {
   --color-accent: oklch(44% 0.11 155);
   --color-accent-hover: oklch(39% 0.10 155);
   --color-accent-soft: oklch(94% 0.028 155);
   --color-focus: oklch(44% 0.11 155);
 }
-:root[data-accent='amber'] {
+:where(:root, [data-appearance])[data-accent='amber'] {
   --color-accent: oklch(47% 0.115 68);
   --color-accent-hover: oklch(42% 0.105 68);
   --color-accent-soft: oklch(95% 0.035 68);
   --color-focus: oklch(47% 0.115 68);
 }
-:root[data-accent='slate'] {
+:where(:root, [data-appearance])[data-accent='slate'] {
   --color-accent: oklch(40% 0.025 258);
   --color-accent-hover: oklch(35% 0.025 258);
   --color-accent-soft: oklch(94% 0.01 258);
   --color-focus: oklch(40% 0.025 258);
 }
-:root[data-theme='dark'][data-accent='green'] { --color-accent: oklch(77% 0.13 155); --color-accent-hover: oklch(82% 0.10 155); --color-accent-soft: oklch(32% 0.038 155); --color-focus: oklch(77% 0.13 155); }
-:root[data-theme='dark'][data-accent='amber'] { --color-accent: oklch(80% 0.13 68); --color-accent-hover: oklch(85% 0.10 68); --color-accent-soft: oklch(32% 0.036 68); --color-focus: oklch(80% 0.13 68); }
-:root[data-theme='dark'][data-accent='slate'] { --color-accent: oklch(80% 0.025 258); --color-accent-hover: oklch(85% 0.022 258); --color-accent-soft: oklch(33% 0.024 258); --color-focus: oklch(80% 0.025 258); }
+:where(:root, [data-appearance])[data-theme='dark'][data-accent='green'] { --color-accent: oklch(77% 0.13 155); --color-accent-hover: oklch(82% 0.10 155); --color-accent-soft: oklch(32% 0.038 155); --color-focus: oklch(77% 0.13 155); }
+:where(:root, [data-appearance])[data-theme='dark'][data-accent='amber'] { --color-accent: oklch(80% 0.13 68); --color-accent-hover: oklch(85% 0.10 68); --color-accent-soft: oklch(32% 0.036 68); --color-focus: oklch(80% 0.13 68); }
+:where(:root, [data-appearance])[data-theme='dark'][data-accent='slate'] { --color-accent: oklch(80% 0.025 258); --color-accent-hover: oklch(85% 0.022 258); --color-accent-soft: oklch(33% 0.024 258); --color-focus: oklch(80% 0.025 258); }
+:where(:root, [data-appearance])[data-accent='violet'] { --color-accent: oklch(45% 0.16 300); --color-accent-hover: oklch(40% 0.14 300); --color-accent-soft: oklch(95% 0.025 300); --color-focus: var(--color-accent); }
+:where(:root, [data-appearance])[data-accent='rose'] { --color-accent: oklch(45% 0.16 15); --color-accent-hover: oklch(40% 0.14 15); --color-accent-soft: oklch(95% 0.025 15); --color-focus: var(--color-accent); }
+:where(:root, [data-appearance])[data-theme='dark'][data-accent='violet'] { --color-accent: oklch(80% 0.11 300); --color-accent-hover: oklch(85% 0.09 300); --color-accent-soft: oklch(32% 0.038 300); --color-focus: var(--color-accent); }
+:where(:root, [data-appearance])[data-theme='dark'][data-accent='rose'] { --color-accent: oklch(80% 0.11 15); --color-accent-hover: oklch(85% 0.09 15); --color-accent-soft: oklch(32% 0.038 15); --color-focus: var(--color-accent); }
+:where(:root, [data-appearance])[data-accent='custom'] { --color-accent: color-mix(in oklch, var(--home-accent-input) 40%, var(--color-ink)); --color-accent-hover: color-mix(in oklch, var(--color-accent) 85%, var(--color-ink)); --color-accent-soft: color-mix(in oklch, var(--home-accent-input) 12%, var(--color-paper)); --color-focus: var(--color-accent); }
+:where(:root, [data-appearance])[data-theme='dark'][data-accent='custom'] { --color-accent: color-mix(in oklch, var(--home-accent-input) 35%, var(--color-ink)); }

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "name": "JSON API",
+  "icon": "server",
+  "display": "stats",
+  "refreshSeconds": 30,
+  "request": {
+    "method": "GET",
+    "url": "{{baseUrl}}/api/status",
+    "headers": [{ "name": "Authorization", "value": "Bearer {{token}}" }],
+    "body": ""
+  },
+  "inputs": [
+    { "key": "baseUrl", "label": "서버 주소", "type": "text", "required": true, "default": "" },
+    { "key": "token", "label": "API 토큰", "type": "secret", "required": true, "default": "" }
+  ],
+  "fields": [
+    { "label": "진행 중", "path": "/active", "format": "number", "unit": "개", "scale": 1, "decimals": 0, "valueMap": {} },
+    { "label": "부하", "path": "/load", "format": "percent", "unit": "", "scale": 100, "decimals": 1, "valueMap": {} },
+    { "label": "메모리", "path": "/memoryBytes", "format": "bytes", "unit": "", "scale": 1, "decimals": 1, "valueMap": {} },
+    { "label": "가동 시간", "path": "/uptimeSeconds", "format": "duration", "unit": "", "scale": 1, "decimals": 0, "valueMap": {} },
+    { "label": "상태", "path": "/status", "format": "text", "unit": "", "scale": 1, "decimals": 0, "valueMap": { "healthy": "정상", "degraded": "점검 필요" } }
+  ]
+}

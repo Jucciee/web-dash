@@ -49,7 +49,7 @@ func (r *Repository) Setup(ctx context.Context, username, hash string) (domain.U
 			}
 			return err
 		}
-		dashboard := DashboardModel{ID: uuid.NewString(), Name: "내 홈서버", Revision: 1}
+		dashboard := DashboardModel{ID: uuid.NewString(), Name: "web-dash", Revision: 1}
 		if err := tx.Create(&dashboard).Error; err != nil {
 			return err
 		}

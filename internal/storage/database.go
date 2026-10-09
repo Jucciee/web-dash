@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"path/filepath"
@@ -10,6 +11,7 @@ import (
 	"github.com/ncruces/go-sqlite3/gormlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"homedashboard/internal/domain"
 )
 
 func Open(path string) (*gorm.DB, error) {
@@ -66,6 +68,22 @@ func Open(path string) (*gorm.DB, error) {
 			}
 			return tx.Model(&SettingsModel{}).Where("id = 1 AND subtitle = ?", "자주 쓰는 서비스, 한곳에서.").Updates(map[string]any{"subtitle": "자주 쓰는 링크, 한곳에서.", "revision": gorm.Expr("revision + CASE WHEN EXISTS (SELECT 1 FROM users) THEN 1 ELSE 0 END")}).Error
 		}},
+		{ID: "20261009_web_dash_customization", Migrate: func(tx *gorm.DB) error {
+			if err := tx.AutoMigrate(&SettingsModel{}); err != nil {
+				return err
+			}
+			appearance, _ := json.Marshal(domain.DefaultAppearance())
+			widgets, _ := json.Marshal(domain.DefaultWidgets())
+			if err := tx.Exec(`UPDATE settings SET
+				title = CASE WHEN title IN ('내 홈서버', '나의 홈서버') THEN 'web-dash' ELSE title END,
+				subtitle = CASE WHEN subtitle IN ('자주 쓰는 서비스, 한곳에서.', '자주 쓰는 링크, 한곳에서.', '매일 쓰는 링크, 한곳에서 열어보세요.') THEN '' ELSE subtitle END,
+				appearance_json = ?, widgets_json = ?,
+				revision = revision + CASE WHEN EXISTS (SELECT 1 FROM users) THEN 1 ELSE 0 END`, string(appearance), string(widgets)).Error; err != nil {
+				return err
+			}
+			return tx.Model(&DashboardModel{}).Where("name IN ?", []string{"내 홈서버", "나의 홈서버"}).Updates(map[string]any{"name": "web-dash", "revision": gorm.Expr("revision + 1")}).Error
+		}},
+		{ID: "20261010_api_addons", Migrate: func(tx *gorm.DB) error { return tx.AutoMigrate(&AddonModel{}) }},
 	}).Migrate(); err != nil {
 		pool.Close()
 		return nil, fmt.Errorf("migrate sqlite: %w", err)

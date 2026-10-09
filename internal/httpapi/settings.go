@@ -23,6 +23,12 @@ func (a *API) settingsRoutes(private *gin.RouterGroup) {
 		if !bind(c, &patch) {
 			return
 		}
+		if patch.Appearance != nil && patch.Appearance.BackgroundImage != "" {
+			if _, _, err := a.Backgrounds.Read(patch.Appearance.BackgroundImage); err != nil {
+				respondError(c, &domain.ValidationError{Message: "배경 이미지가 없습니다. 이미지를 다시 업로드해주세요."})
+				return
+			}
+		}
 		settings, err := a.Store.UpdateSettings(c.Request.Context(), revision, patch)
 		if err != nil {
 			respondError(c, err)

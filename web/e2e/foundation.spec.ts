@@ -2,11 +2,14 @@ import { expect, test } from '@playwright/test'
 import path from 'node:path'
 
 test('setup → card and group editing → reload → logout and login; responsive layouts', async ({ page }) => {
+  test.setTimeout(90_000)
   const errors: string[] = []
   page.on('pageerror', error => errors.push(error.message))
   page.on('console', message => { if (message.type() === 'error' && !message.text().includes('Failed to load resource')) errors.push(message.text()) })
   await page.goto('/')
-  await expect(page.getByRole('heading', { name: '홈서버를 시작할 준비' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '관리자 설정' })).toBeVisible()
+  await expect(page.getByText('web-dash', { exact: true })).toBeVisible()
+  await expect(page.getByText('매일 쓰는 링크,')).toHaveCount(0)
   for (const width of [320, 375, 414, 768]) {
     await page.setViewportSize({ width, height: 900 })
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
@@ -17,8 +20,8 @@ test('setup → card and group editing → reload → logout and login; responsi
   await page.getByLabel('관리자 아이디').fill('browser-admin')
   await page.getByLabel('비밀번호', { exact: true }).fill('correct horse battery staple')
   await page.getByRole('button', { name: '관리자 계정 만들기' }).click()
-  await expect(page.getByRole('heading', { name: '내 홈서버', exact: true })).toBeVisible()
-  await expect(page.getByText('자주 쓰는 링크를 모아보세요')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'web-dash', exact: true })).toBeVisible()
+  await expect(page.getByText('링크가 없습니다', { exact: true })).toBeVisible()
   await page.getByRole('link', { name: '링크 관리', exact: true }).first().click()
   await page.getByRole('button', { name: '링크 추가', exact: true }).first().click()
   const dialog = page.getByRole('dialog')
@@ -44,6 +47,11 @@ test('setup → card and group editing → reload → logout and login; responsi
   await dialog.getByLabel('그룹 이름').fill('미디어')
   await dialog.getByRole('button', { name: '저장', exact: true }).click()
   await expect(dialog).not.toBeVisible()
+  await page.getByRole('button', { name: '미디어 그룹 위로 이동', exact: true }).click()
+  await expect(page.locator('main section[aria-label$=" 그룹"]').first()).toHaveAttribute('aria-label', '미디어 그룹')
+  await page.reload()
+  await expect(page.locator('main section[aria-label$=" 그룹"]').first()).toHaveAttribute('aria-label', '미디어 그룹')
+  await page.getByLabel('숨긴 링크', { exact: true }).check()
   await page.getByRole('button', { name: '사진 보관함 편집', exact: true }).click()
   await dialog.getByLabel('그룹', { exact: true }).selectOption({ label: '미디어' })
   await dialog.getByLabel('대시보드에서 숨기기').uncheck()
@@ -62,7 +70,7 @@ test('setup → card and group editing → reload → logout and login; responsi
     await expect(page.getByRole('button', { name: '사진 보관함 편집', exact: true })).toBeFocused()
   }
   await page.goto('/')
-  await expect(page.getByRole('heading', { name: '내 홈서버', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'web-dash', exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: '사진 보관함 편집', exact: true })).toHaveCount(0)
   await page.evaluate(() => window.scrollTo(0, 0))
   await page.screenshot({ path: 'test-results/dashboard-desktop.png', fullPage: true })
@@ -70,7 +78,7 @@ test('setup → card and group editing → reload → logout and login; responsi
   await page.screenshot({ path: 'test-results/dashboard-mobile.png', fullPage: true })
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.getByRole('button', { name: '로그아웃', exact: true }).click()
-  await expect(page.getByRole('heading', { name: '다시 오셨네요' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '로그인', exact: true })).toBeVisible()
   for (const width of [320, 375, 414, 768]) {
     await page.setViewportSize({ width, height: 900 })
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
@@ -86,10 +94,13 @@ test('setup → card and group editing → reload → logout and login; responsi
   await expect(page.getByRole('link', { name: /사진 보관함/ })).toBeVisible()
   // Appearance is persisted, and custom CSS is loaded only on home.
   await page.goto('/settings')
-  await page.getByLabel('홈 제목').fill('나의 홈 랩')
-  await page.getByLabel('테마', { exact: true }).selectOption('dark')
+  await page.getByRole('button', { name: '표시 항목', exact: true }).click()
+  await page.getByLabel('홈 제목', { exact: true }).fill('나의 홈 랩')
+  await page.getByRole('button', { name: '화면', exact: true }).click()
+  await page.getByRole('combobox', { name: '테마', exact: true }).selectOption('dark')
   await page.getByLabel('강조색').selectOption('green')
   await page.getByLabel('홈 카드를 촘촘하게 표시').check()
+  await page.getByRole('button', { name: '고급', exact: true }).click()
   await page.getByLabel('사용자 CSS', { exact: true }).fill('.service-card { border-radius: 23px; }')
   await page.getByRole('button', { name: '변경 저장', exact: true }).click()
   await expect(page.getByText('설정을 저장했습니다.')).toBeVisible()
@@ -101,6 +112,7 @@ test('setup → card and group editing → reload → logout and login; responsi
   await expect(page.locator('.service-card').first()).toHaveCSS('border-radius', '23px')
   await page.goto('/settings')
   await expect(page.locator('link[data-custom-css]')).toHaveCount(0)
+  await page.getByRole('button', { name: '고급', exact: true }).click()
   await expect(page.getByLabel('사용자 CSS', { exact: true })).toHaveValue('.service-card { border-radius: 23px; }')
   for (const width of [320, 375, 414, 768]) {
     await page.setViewportSize({ width, height: 900 })
@@ -109,17 +121,18 @@ test('setup → card and group editing → reload → logout and login; responsi
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.screenshot({ path: 'test-results/settings-desktop.png', fullPage: true })
   // A stale settings form can explicitly reload after another tab saves.
-  await page.getByLabel('홈 제목').fill('저장 충돌 테스트')
+  await page.getByRole('button', { name: '표시 항목', exact: true }).click()
+  await page.getByLabel('홈 제목', { exact: true }).fill('저장 충돌 테스트')
   const csrfResponse = await page.request.get('/api/v1/auth/csrf')
   const csrf = (await csrfResponse.json()).data.csrfToken
   const settingsResponse = await page.request.get('/api/v1/settings')
   const settings = (await settingsResponse.json()).data
-  const concurrent = await page.request.patch('/api/v1/settings', { headers: { 'X-CSRF-Token': csrf, 'If-Match': `"${settings.revision}"`, Origin: 'http://127.0.0.1:15173' }, data: { subtitle: '새 창에서 저장한 설정' } })
+  const concurrent = await page.request.patch('/api/v1/settings', { headers: { 'X-CSRF-Token': csrf, 'If-Match': `"${settings.revision}"`, Origin: new URL(page.url()).origin }, data: { subtitle: '새 창에서 저장한 설정' } })
   expect(concurrent.status()).toBe(200)
   await page.getByRole('button', { name: '변경 저장', exact: true }).click()
   await expect(page.getByRole('alert')).toContainText('다른 화면에서 수정된 항목')
   await page.getByRole('button', { name: '다시 시도', exact: true }).click()
-  await expect(page.getByLabel('홈 제목')).toHaveValue('나의 홈 랩')
+  await expect(page.getByLabel('홈 제목', { exact: true })).toHaveValue('나의 홈 랩')
   await expect(page.getByLabel('홈 설명')).toHaveValue('새 창에서 저장한 설정')
   // Paste Caddy, preview and select-register; re-import detects the duplicate.
   await page.goto('/settings/imports')

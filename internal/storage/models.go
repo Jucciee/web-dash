@@ -62,14 +62,28 @@ type SessionModel struct {
 func (SessionModel) TableName() string { return "sessions" }
 
 type SettingsModel struct {
-	ID        int    `gorm:"primaryKey;check:id = 1"`
-	Title     string `gorm:"not null"`
-	Subtitle  string `gorm:"not null"`
-	Theme     string `gorm:"not null"`
-	Accent    string `gorm:"not null"`
-	Compact   bool   `gorm:"not null"`
-	CustomCSS string `gorm:"not null"`
-	Revision  int64  `gorm:"not null;default:1"`
+	ID             int    `gorm:"primaryKey;check:id = 1"`
+	Title          string `gorm:"not null"`
+	Subtitle       string `gorm:"not null"`
+	Theme          string `gorm:"not null"`
+	Accent         string `gorm:"not null"`
+	Compact        bool   `gorm:"not null"`
+	CustomCSS      string `gorm:"not null"`
+	AppearanceJSON string `gorm:"not null;default:'{}'"`
+	WidgetsJSON    string `gorm:"not null;default:'{}'"`
+	Revision       int64  `gorm:"not null;default:1"`
 }
 
 func (SettingsModel) TableName() string { return "settings" }
+
+type AddonModel struct {
+	ID            string `gorm:"primaryKey;size:36"`
+	ManifestJSON  string `gorm:"not null"`
+	ValuesJSON    string `gorm:"not null"`
+	SecretsCipher string `gorm:"not null"`
+	Enabled       bool   `gorm:"not null"`
+	Position      int    `gorm:"not null;check:position >= 0"`
+	Revision      int64  `gorm:"not null;default:1"`
+}
+
+func (AddonModel) TableName() string { return "addons" }

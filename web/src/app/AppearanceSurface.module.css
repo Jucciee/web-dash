@@ -1,0 +1,17 @@
+/* Hallmark · macrostructure: Workbench · genre: modern-minimal · theme: existing Cobalt system */
+/* Hallmark · pre-emit critique: P4 H5 E4 S5 R5 V4 */
+.surface { background: var(--color-paper); color: var(--color-body); font-family: var(--font-body); }
+.surface[data-width='narrow'] { --home-max-width: 960px; }
+.surface[data-width='wide'] { --home-max-width: 1680px; }
+.surface[data-width='full'] { --home-max-width: none; }
+.surface[data-radius='square'] { --home-radius: 0; }
+.surface[data-radius='round'] { --home-radius: 1.5rem; }
+.surface[data-icon-size='small'] { --home-icon-size: 28px; }
+.surface[data-icon-size='large'] { --home-icon-size: 52px; }
+.surface[data-font-size='small'] { --text-sm: 0.8125rem; --text-xs: 0.6875rem; }
+.surface[data-font-size='large'] { --text-sm: 1rem; --text-xs: 0.875rem; }
+.surface[data-font-family='system'] { --font-body: var(--font-system); --font-display: var(--font-system); }
+.surface[data-font-family='mono'] { --font-body: var(--font-mono); --font-display: var(--font-mono); }
+.surface[data-background='grid'] { background-image: linear-gradient(var(--color-pattern) var(--rule-width), transparent var(--rule-width)), linear-gradient(90deg, var(--color-pattern) var(--rule-width), transparent var(--rule-width)); background-size: 32px 32px; }
+.surface[data-background='dots'] { background-image: radial-gradient(var(--color-pattern) var(--rule-width), transparent var(--rule-width)); background-size: 20px 20px; }
+.surface[data-background='image'] { background-image: linear-gradient(var(--color-wallpaper-overlay), var(--color-wallpaper-overlay)), var(--home-wallpaper); background-size: cover; background-position: center; background-attachment: fixed; }

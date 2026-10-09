@@ -1,11 +1,12 @@
-# 구현된 기본 골격
+# web-dash 구현 구조
 
-2026-10-04 기준 링크 편집, 설정 분리·테마/CSS·가져오기, 사이트·이미지 주소·업로드 아이콘과 페이지 접속 시 웹 응답 확인을 구현했다. Docker는 폴더에서 찾은 Compose 파일과 실행 중인 컨테이너를 대조해 실제 공개 포트를 읽는다. Docker 사용량·상태 모니터링, 호스트 수집기, 백업은 후속 단계다.
+2026-10-10 기준 링크·그룹 편집, 시각적 커스터마이징과 미리보기, 배경 업로드, 가져오기, 아이콘·웹 응답 확인, Docker·호스트 지표와 JSON API 애드온을 구현했다. 홈·로그인의 기본 홍보 문구를 제거하고 제품명을 web-dash로 통일했다. 백업·복원과 앱별 애드온 사전 설정 모음은 후속 작업이다.
 
 ## 실제 폴더 구조
 
 ```text
 cmd/dashboard/          Go 서버 실행, timeout, 종료 처리
+internal/addons/        선언형 API 요청, 암호화 입력, 응답 경로·표시 변환, 캐시
 internal/app/           환경 설정, 비밀 키 파일, 의존성 연결
 internal/auth/          관리자 초기 설정, bcrypt, SCS 세션
 internal/domain/        API에 노출하는 타입, 입력, 도메인 오류
@@ -21,10 +22,14 @@ internal/static/        SPA 배포 파일과 API 404 분리
 web/src/app/            Router, QueryClient, 인증 경계, 메뉴
 web/src/api/            fetch wrapper, OpenAPI 생성 타입
 web/src/components/     버튼, native dialog, 오류·로딩 표시
-web/src/features/       인증, 대시보드, 카드 편집, 다음 단계 안내
+internal/telemetry/     호스트 지표, Docker Stats, 공유 캐시와 수집 제한
+internal/backgrounds/   인증된 배경 이미지 검증·저장
+web/src/features/       인증, 대시보드, 화면 편집, 가져오기, 상태 화면
 web/src/styles/         전역 스타일
 tokens.css              공통 색상, 폰트, 간격, 상태 토큰
-deploy/                 다단계 Dockerfile, 단일 서비스 Compose
+Dockerfile              다단계 Go·React 컨테이너 빌드
+compose.yaml            기본 단일 서비스 배포
+compose.monitoring.yaml Linux 호스트 마운트·읽기 전용 Docker proxy overlay
 testdata/               Nginx·Caddy 가져오기 샘플
 scripts/                격리된 브라우저 테스트 서버
 ```
@@ -70,12 +75,36 @@ Docker SDK는 OS 기본 named pipe/socket 또는 지정 endpoint를 사용하며
 ## 다음 확장 지점
 
 1. 가져오기에 원본 snapshot과 신규·변경·동일·사라짐 비교를 붙인다. Nginx -T와 전체 Caddy adapt 검증은 별도 격리 worker에서 확장한다.
-2. Docker Inspect·Stats와 주기적 상태 수집을 추가한다. Linux 배포에는 조회 전용 socket proxy와 Compose 폴더 마운트를 구성한다.
-3. `internal/hostmetrics/`, `cmd/host-collector/`에 지표 수집을 구현한다. 실제 출처가 없으면 CPU·RAM·디스크 수치를 생성하지 않는다.
+2. 앱별 API 애드온 사전 설정과 링크별 컨테이너 연결을 확장한다. 설정 파일 기반 API 애드온, Docker 상태·Stats와 Linux 조회 전용 proxy 예시는 구현했다.
+3. 인증된 원격 호스트 수집기와 추세 보관을 확장한다. 현재는 gopsutil의 실제 실행 호스트 또는 Linux 호스트 마운트를 조회한다.
 4. 드래그 정렬은 dnd kit 단계에서 붙인다. 현재 키보드로 누를 수 있는 순서 이동 버튼과 전체 layout API를 먼저 제공한다.
 5. 백업·복원 preview/commit을 별도 migration으로 추가한다.
 
-현재 사용 중인 Crossplane, Caddy lexer, Docker SDK만 연결한다. 호스트 지표 SDK는 수집 단계에서 추가한다.
+현재 Crossplane, Caddy lexer, Docker SDK, gopsutil을 사용한다.
+
+## 커스터마이징과 상태 수집
+
+`20261009_web_dash_customization` migration은 `settings.appearance_json`, `widgets_json`을 추가한다. Appearance·Widgets는 각각 완전한 객체로 갱신하고 `false`·`0`도 그대로 저장한다. 전체 설정 PATCH에는 기존 If-Match와 트랜잭션을 사용한다. 기존 기본 제목·설명만 web-dash와 빈 설명으로 바꾸고 직접 작성한 문구·CSS·링크는 보존한다.
+
+화면 설정은 프리셋·화면·표시 항목·위젯·고급으로 나눈다. `AppearanceSurface`가 저장된 홈과 저장 전 미리보기에 같은 토큰·속성을 적용한다. 1~6열은 모바일에서 줄어들고 그룹 한 줄 배치에서는 카드 열 수로 적용한다. 미리보기에는 일부 실제 링크를 쓰고 상태 수치는 생성하지 않는다. 홈 CSS는 설정·미리보기에서 실행하지 않으므로 홈을 숨긴 CSS도 설정에서 복구할 수 있다.
+
+배경은 PNG/JPEG/WebP, 8MiB·6000px·2400만 화소로 제한한다. SHA-256 ID와 원자적 파일 교체를 사용하고 인증·CSRF·본문 제한을 적용한다. 새 설정이 참조하는 배경 파일의 존재를 검사한다.
+
+`/monitoring/host`, `/monitoring/docker`는 로그인 후 조회한다. 5초 공유 캐시와 singleflight로 여러 탭의 요청을 합친다. 상태 화면을 열어둔 동안만 수동 또는 10/30/60초 간격으로 조회하며 백그라운드 탭의 주기적 조회는 멈춘다. Docker는 전체 목록, info, 실행 중 컨테이너 Stats를 읽고 CPU의 paired sample·Linux 메모리 cache·누적 네트워크를 계산한다. Stats는 최대 4개 동시·개별 3초, 수집 전체는 12초로 제한한다. 구형 Engine 건강 상태는 Status 문자열에서 읽는다. 미지원·실패 지표는 null이며 부분 실패가 전체 목록을 지우지 않는다.
+
+수집기의 요청 hook은 ping/version/info/목록/Stats GET만 허용한다. 가져오기의 기존 EngineReader는 ping/version/목록만 허용한다. 환경변수·로그·Inspect·제어 API는 조회하지 않는다. Linux 호스트 마운트는 proc/sys/root가 모두 설정돼야 host로 표시한다. 기본 컨테이너 실행 환경과 Docker Desktop Linux VM을 Windows 전체 호스트로 표시하지 않는다.
+
+## API 애드온
+
+`20261010_api_addons` migration은 요청·표시 정의, 일반 연결값, 암호화한 보안 값, 활성화·순서·revision을 저장하는 `addons` 테이블을 추가한다. 정의와 설치 값을 분리하며 내보내기는 정의만 읽는다. AES-GCM 키는 `data/addon-secret.key`에 유지하고 앱 종료 시 애드온 수집기의 context와 idle connection을 닫는다.
+
+`internal/addons`가 v1 manifest·참조 키·인증 헤더·JSON Pointer·입력 크기를 검증한다. GET 또는 JSON POST 요청 하나를 지원하고 표현식이나 스크립트를 실행하지 않는다. CSRF를 포함한 dashboard 세션/헤더는 업스트림에 전달하지 않는다. `webfetch`의 실제 IP 검사와 TLS 검증을 사용하고 redirect를 차단한다. 4개 동시·HTTP 6초·수집 전체 8초·JSON 1MiB로 제한한다. 홈 read는 revision별 singleflight와 5초 캐시를 사용한다. 설정·import·서버 시작은 수집을 시작하지 않는다.
+
+보안 입력은 편집 요청에서 키를 생략하면 보존하고 빈 문자열이면 제거한다. 입력 키와 secret 종류가 같은 경우에만 보존하며 origin이 달라지면 재입력을 요구한다. 공개 DTO에는 설정한 secret 키 이름만 제공한다. 응답 preview는 지정 값과 80개·12단계의 선택 목록을 반환하며 입력 secret의 원문·URL/Base64 인코딩을 마스킹한다. secret이 포함된 응답 키/경로는 선택 목록에서 제외한다.
+
+설정 화면은 간편/JSON 편집, 인증 템플릿 버튼, 응답 경로 선택, 테스트 미리보기, 설치·활성화·순서·삭제, 파일 가져오기·내보내기를 제공한다. 연결값은 파일에 넣지 않으며 가져오기만으로 요청하거나 저장하지 않는다. 수정한 표시 규칙은 재테스트 전까지 이전 결과를 새 규칙의 결과처럼 표시하지 않는다. 홈 `.addon-widget`과 `.addon-metric`에는 기존 Appearance 토큰과 홈 전용 CSS가 적용된다.
+
+작성 규약과 예제는 [09_ADDONS.md](09_ADDONS.md)에 있다. Go 테스트는 secret 암호화·재시작·생략 시 보존·origin 변경·revision 충돌·캐시/동시 요청·redirect/헤더 주입·응답 크기·JSON Pointer·0/false·비활성화와 인증/CSRF를 검증한다. Playwright는 작성→연결 테스트→값 선택→홈 표시→내보내기→공유 파일 가져오기→설치→편집·순서·삭제와 모바일 레이아웃을 확인한다.
 
 ## 검증 범위
 

@@ -1,14 +1,14 @@
-# Dashboard 개발 문서
+# web-dash
 
-작성일: 2026-10-03
+업데이트: 2026-10-10
 
-Nginx 설정 또는 Caddyfile에서 서비스를 가져와 대시보드에 추가하고, Docker와 서버 상태를 읽기 전용으로 확인하는 개인 홈서버 대시보드를 만든다. 카드 추가, 가져오기, 배치, 연결 설정, 백업은 브라우저에서 처리한다.
+Nginx 설정 또는 Caddyfile에서 링크를 가져오고, Docker와 호스트 상태를 확인하는 홈서버 대시보드다. 링크·그룹 편집과 화면 설정은 브라우저에서 처리한다.
 
-백엔드는 **Go + Gin + GORM**, 프론트엔드는 **React + TypeScript + Vite**, 저장소는 **SQLite**를 사용한다. 관리자 설정·로그인, 링크·그룹 편집, 테마·사용자 CSS, 아이콘, 웹 상태 확인, Docker 폴더 검색과 Nginx·Caddy 설정 가져오기를 구현했다. 홈에는 검색과 링크 카드를 표시하고 편집 기능은 별도 설정 페이지에 둔다. Docker·호스트 지표와 백업은 후속 단계다.
+백엔드는 **Go + Gin + GORM**, 프론트엔드는 **React + TypeScript + Vite**, 저장소는 **SQLite**를 사용한다. 관리자 로그인, 링크·그룹 편집과 가져오기, 아이콘, HTTP 상태 확인, Docker·호스트 지표, 화면 커스터마이징과 JSON API 애드온을 제공한다. 설정은 브라우저에서 조절하고 저장 전에 미리볼 수 있다.
 
 ## 빠른 실행
 
-Go **1.26 이상**과 Node.js **24 LTS**가 필요하다. Windows에서도 C 컴파일러 없이 SQLite를 사용할 수 있다. 현재 검증 환경은 Go 1.26.4, Node.js 24.21.0이다. 주요 의존성은 Gin 1.12.0, GORM 1.31.2, gormlite 0.34.0, React 19.3.0, TypeScript 5.9.3, Vite 8.3.2이며 정확한 버전은 lock 파일에 고정한다. Vite의 Node 요구사항은 [공식 안내](https://vite.dev/guide/)를 참고한다.
+Go **1.26 이상**과 Node.js **24 LTS**가 필요하다. Windows에서도 C 컴파일러 없이 SQLite를 사용할 수 있다. 현재 검증 환경은 Go 1.26.4, Node.js 26.10.0이다. 주요 의존성은 Gin 1.12.0, GORM 1.31.2, gormlite 0.34.0, React 19.3.0, TypeScript 5.9.3, Vite 8.3.2이며 정확한 버전은 lock 파일에 고정한다. Vite의 Node 요구사항은 [공식 안내](https://vite.dev/guide/)를 참고한다.
 
 프로젝트 루트에서 실행한다.
 
@@ -45,20 +45,56 @@ Vite의 `/api` 프록시가 Go 서버로 요청을 전달한다. 브라우저 �
 - SQLite migration, 실제 외래키, WAL, 트랜잭션, 수정 충돌·CSRF·로그인 요청 제한
 - 별도 설정 페이지, 밝게·어둡게·시스템 테마, 강조색·카드 밀도, 홈 전용 사용자 CSS
 - Docker Compose 폴더 검색과 실행 중 컨테이너의 실제 공개 TCP 포트 가져오기
+- Docker 전체 컨테이너의 실행·중지·건강 상태, CPU·메모리 사용량과 누적 네트워크 송수신
+- 실행 호스트의 CPU·RAM·선택 디스크·가동 시간, 실제 측정 환경과 마지막 수집 시각
+- 기본·홈 랩·미니멀·컴팩트 프리셋과 저장 전 미리보기
+- 그룹 배치·자동/1~6열·화면 폭·카드/타일/목록·모서리·아이콘/글자 크기·글꼴
+- 6개 강조색·사용자 색상, 단색/격자/점/업로드 배경과 가림 정도
+- 제목·시계·검색·아이콘·설명·주소·웹 상태·그룹 개수·하단 메뉴 표시와 그룹 접기
+- 호스트/Docker 위젯 표시·순서, 수동 또는 10/30/60초 갱신
+- 직접 만든 API 애드온과 공유 JSON 가져오기·내보내기, 서버 주소·토큰·쿠키·헤더·POST 본문 설정
+- API 연결 테스트와 응답값 선택, 지표/목록 표시·단위·배수·값별 문구·갱신 간격·표시 순서
+- 애드온 인증값 암호화 저장, 저장한 값 유지·교체, 내보내기에서 개인 연결값 제외
+- 그룹 순서 이동, 카드 순서 이동과 그룹 변경
 - Nginx·Caddy 파일 업로드·붙여넣기, 후보 미리보기·선택 등록·중복 주소 검사
 - Go 요청 로그와 시작·종료 로그, 파일 보관과 로그 레벨·형식 설정
 - 반응형 화면, OpenAPI 계약과 생성 DTO, Go 통합 테스트·Playwright 브라우저 테스트
 
-Docker 사용량·상태의 주기적 모니터링, 호스트 지표, 백업·복원은 아직 구현하지 않았다. Docker 폴더 검색은 가져오기 시점의 실행 상태와 공개 포트만 조회한다.
+백업·복원과 앱별 사전 설정 모음은 후속 작업이다. Docker·호스트·애드온은 화면을 보고 있을 때 설정한 간격으로 조회한다. 숨긴 위젯이나 닫힌 페이지에서는 갱신하지 않는다. Docker·호스트의 별도 상세 페이지에서는 위젯 표시 여부와 관계없이 조회할 수 있다.
 
 ## 홈과 설정
 
-- `/`: 링크 검색과 그룹별 바로가기, 웹 상태, 현재 시각. 숨긴 카드와 편집 버튼은 표시하지 않는다.
-- `/settings`: 홈 제목·설명, 테마, 강조색, 카드 밀도, 사용자 CSS.
+- `/`: 커스터마이징한 링크 화면과 호스트·Docker·API 애드온 위젯.
+- `/settings`: 프리셋, 화면·표시 항목·위젯·고급 설정, 실제 링크 기반 미리보기.
 - `/settings/services`: 카드·그룹 편집, 숨김, 순서 변경, 삭제·되돌리기.
 - `/settings/imports`: Docker 폴더 검색과 Nginx·Caddy 가져오기.
+- `/settings/addons`: API 애드온 작성·연결 테스트·설치·편집·JSON 공유와 순서 설정.
+- `/connections`: Docker 상태, 이름/프로젝트/이미지 검색과 실행/중지/비정상 필터.
+- `/hosts`: 실제 호스트 지표, 수집 환경과 디스크 경로.
 
 사용자 CSS는 저장 후 홈에만 적용된다. `.home-dashboard`, `.service-card`, `.service-title`, `.service-description`, `.group-title`을 사용할 수 있다. 최대 32KiB이고, 설정 페이지에서는 CSS가 적용되지 않아 항상 수정할 수 있다. 외부 이미지·폰트는 기본 CSP 정책에 따라 차단된다.
+
+추가 CSS 대상은 `.service-url`, `.home-widgets`, `.host-widget`, `.docker-widget`, `.addon-widgets`, `.addon-widget`, `.addon-metric`이다. 배경 이미지는 설정에서 PNG/JPG/WebP를 업로드한다. 최대 8MiB·가로/세로 6000px·2400만 화소이며 파일은 `data/backgrounds/`에 저장한다. 사용자 색상은 읽기 쉬운 대비를 유지하도록 밝기가 조정된다. 프리셋과 세부 설정 초기화는 링크를 변경하지 않는다. 사용자 CSS는 미리보기에 적용하지 않는다.
+
+기존 설치는 새 migration으로 화면 설정을 추가한다. 기본 홈 제목은 `web-dash`, 기본 설명은 빈 값으로 바꾸고 사용자가 작성한 제목·설명·CSS와 기존 링크는 보존한다.
+
+## API 애드온
+
+**설정 → 애드온**에서 API 주소와 인증 방식을 정하고, 연결 테스트 응답에서 표시할 값을 고른다. Bearer·API 키·Cookie·Basic 인증과 사용자 헤더, GET·JSON POST·GraphQL을 지원한다. 숫자·퍼센트·용량·가동 시간·불리언·항목 개수·텍스트를 지표 카드나 목록으로 표시한다.
+
+JSON 정의를 직접 편집하거나 다른 사람의 `.web-dash.json` 파일을 가져올 수 있다. 파일 가져오기는 편집 화면만 열고 API를 자동 호출하지 않는다. 자신의 서버 주소·인증값을 채워 테스트한 뒤 설치한다. 내보낸 파일에는 개인 연결값이 들어가지 않는다. 저장한 보안 값은 SQLite에서 암호화하며 `data/addon-secret.key`를 DB와 함께 보존해야 한다.
+
+작성 방법과 템플릿·응답 경로는 [API 애드온 가이드](docs/09_ADDONS.md), 시작용 설정은 [예제 파일](examples/addons/json-api.web-dash.json)을 참고한다.
+
+## Docker·호스트 상태
+
+직접 실행할 때 호스트 CPU·RAM·디스크·가동 시간을 수집한다. 기본 디스크는 Linux `/`, Windows는 실행 작업 폴더가 있는 드라이브다. `DASHBOARD_HOST_DISK`에 다른 디렉터리나 드라이브를 지정할 수 있고 `DASHBOARD_HOST_NAME`으로 표시 이름을 설정한다.
+
+Docker는 OS 기본 socket/named pipe, `DOCKER_HOST`, 또는 `DASHBOARD_DOCKER_HOST`를 사용한다. 전체 컨테이너를 조회하고 실행 중인 컨테이너에만 Stats를 요청한다. Linux CPU는 두 샘플의 차이로 계산하고 메모리는 inactive file cache를 제외한다. 네트워크는 누적 송수신 바이트다. Windows 컨테이너에서 제공하지 않는 지표, 종료된 컨테이너, 권한이 없는 Stats는 `—`로 표시한다.
+
+수집 요청은 5초 캐시로 합치고 Stats는 최대 4개 동시 요청·개별 3초·전체 12초로 제한한다. 호출 hook은 ping, version, info, 목록, stats 조회만 허용한다. 일부 사용량 조회가 실패해도 컨테이너 목록을 유지한다. 연결 실패는 설정 안내와 함께 표시하며 가짜 사용량을 만들지 않는다.
+
+Docker Engine 지표와 web-dash 실행 호스트 지표는 출처가 다르다. Windows에서 직접 실행하면 호스트는 Windows 전체를 측정하고 Docker Desktop은 별도의 Linux VM/Engine 정보를 표시한다. 컨테이너의 기본 호스트 패널은 실행 환경으로 표시하며 CPU·RAM은 커널이 제공하는 조회값, 디스크는 선택 경로 기준이다. 실제 Linux 호스트는 아래 overlay로 proc·sys·root를 모두 연결한다.
 
 ## 링크 아이콘과 웹 상태
 
@@ -108,7 +144,7 @@ React를 빌드한 뒤 Go 서버만 실행하면 [http://127.0.0.1:8080](http://
 go run ./cmd/dashboard
 ```
 
-브라우저 테스트는 최초 한 번 Chromium을 설치한 뒤 실행한다. 테스트마다 별도 DB를 사용하고 실제 `data/`는 건드리지 않는다.
+브라우저 테스트는 최초 한 번 Chromium을 설치한 뒤 실행한다. 프론트엔드를 빌드하고 Go 서버에서 제공하는 배포용 화면을 검사한다. 매 실행마다 별도 DB를 사용하고 실제 `data/`는 건드리지 않는다.
 
 ```powershell
 cd web
@@ -121,13 +157,13 @@ npm run test:e2e
 ## Docker 실행
 
 ```powershell
-docker compose -f deploy/compose.yaml up -d --build
+docker compose -f compose.yaml up -d --build
 ```
 
 기본 공개 주소는 [http://127.0.0.1:8080](http://127.0.0.1:8080)이고 DB는 `dashboard-data` 볼륨에 저장된다. Docker 이미지에 shell이 없으므로 초기 토큰 파일만 복사해 다음 명령으로 확인한다.
 
 ```powershell
-docker compose -f deploy/compose.yaml cp dashboard:/data/setup-token ./setup-token
+docker compose -f compose.yaml cp dashboard:/data/setup-token ./setup-token
 Get-Content ./setup-token
 Remove-Item -LiteralPath ./setup-token
 ```
@@ -135,6 +171,14 @@ Remove-Item -LiteralPath ./setup-token
 LAN 공개가 필요하면 Compose 실행 전에 `$env:DASHBOARD_BIND='0.0.0.0'`를 설정한다. 이 단계의 Compose에는 Docker socket이나 프록시 연동을 추가하지 않았다. Docker 빌드·기동은 Docker가 설치된 환경에서 확인해야 한다.
 
 컨테이너에서 Docker 폴더 검색을 사용하려면 Compose 폴더를 컨테이너에 읽기 전용으로 마운트하고 조회 전용 Docker socket proxy를 연결한다. Compose 경로 라벨과 대조할 수 있도록 호스트와 동일한 절대 경로로 폴더를 마운트한다. 기본 배포 파일은 socket을 자동으로 연결하지 않는다.
+
+Linux 홈서버에서 Docker 상태와 실제 호스트 지표를 함께 켜는 예시:
+
+```sh
+docker compose -f compose.yaml -f compose.monitoring.yaml up -d --build
+```
+
+이 overlay는 [Docker socket proxy](https://github.com/Tecnativa/docker-socket-proxy)를 내부 네트워크에만 연결하고 변경 API를 차단한다. 호스트 `/proc`, `/sys`, `/`를 읽기 전용으로 마운트하므로 이 권한을 줄 web-dash 서버에서 사용한다. 공개 proxy 포트는 만들지 않는다. root 마운트는 디스크 사용량 측정에 사용한다. Docker 폴더 검색까지 사용하려면 Compose 폴더도 호스트와 같은 절대 경로로 추가 마운트해야 한다. Docker Desktop에서는 마운트 출처가 Linux VM이므로 Windows 전체 지표는 Windows에서 직접 서버를 실행해 확인한다.
 
 ## 읽는 순서
 
@@ -167,6 +211,6 @@ LAN 공개가 필요하면 Compose 실행 전에 `$env:DASHBOARD_BIND='0.0.0.0'`
 
 ## 첫 개발 목표
 
-카드 저장·설정 분리·가져오기 미리보기와 선택 등록까지 구현했다. 다음에는 재가져오기 변경 비교, Docker 상태·사용량 모니터링, 호스트 지표와 백업·복원을 연결한다.
+카드·그룹·가져오기, 화면 설정과 실제 Docker·호스트 지표를 구현했다. 다음에는 재가져오기 변경 비교, 앱별 서비스 위젯, 백업·복원을 확장한다.
 
 구체적인 의존성 버전은 `go.mod`, `go.sum`, `web/package-lock.json`과 컨테이너 이미지 태그에 고정했다. 남은 기능은 [개발 작업 목록](docs/06_TASKS.md)에 정리했다.

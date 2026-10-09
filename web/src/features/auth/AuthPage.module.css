@@ -19,3 +19,8 @@
   .intro > div > p:not(.introLabel) { font-size: var(--text-xs); }
   .formArea { padding: var(--space-xl) var(--space-md) var(--space-2xl); }
 }
+.page { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); max-width: 1200px; margin-inline: auto; }
+.authBrand { padding: var(--space-lg) var(--space-xl); }
+.formArea { align-items: center; padding-bottom: var(--space-4xl); }
+.formWrap h1 { font-size: var(--text-lg); margin-bottom: var(--space-xl); }
+@media (max-width: 480px) { .authBrand { padding: var(--space-md); } .formArea { align-items: flex-start; padding-top: var(--space-2xl); } }

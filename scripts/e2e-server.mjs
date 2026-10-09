@@ -13,14 +13,29 @@ const composeFile = path.join(composeFolder, 'compose.yml')
 await writeFile(composeFile, 'services:\n  browser-docker:\n    image: example/test-only\n    ports: ["9999:3000"]\n')
 const fakeDocker = http.createServer((request, response) => {
   if (request.url === '/_ping') { response.setHeader('API-Version', '1.56'); response.end('OK'); return }
-  if (request.method !== 'GET' || !/^\/v[0-9.]+\/containers\/json/.test(request.url ?? '')) { response.writeHead(403); response.end(); return }
+  if (request.method !== 'GET') { response.writeHead(403); response.end(); return }
   response.setHeader('Content-Type', 'application/json')
-  response.end(JSON.stringify([{ Id: 'a'.repeat(64), Names: ['/browser-docker'], State: 'running', Labels: { 'com.docker.compose.project': 'e2e-compose', 'com.docker.compose.service': 'browser-docker', 'com.docker.compose.project.config_files': composeFile }, Ports: [{ IP: '0.0.0.0', PublicPort: 31080, PrivatePort: 3000, Type: 'tcp' }] }]))
+  if (/^\/v[0-9.]+\/info/.test(request.url ?? '')) { response.end(JSON.stringify({ Name: 'e2e-engine', OperatingSystem: 'Docker Desktop (test fixture)', OSType: 'linux', ServerVersion: '29.0.0', NCPU: 4, MemTotal: 8 * 1024 ** 3 })); return }
+  if (/^\/v[0-9.]+\/containers\/[a-f0-9]+\/stats/.test(request.url ?? '')) { response.end(JSON.stringify({ read: new Date().toISOString(), preread: new Date(Date.now() - 1000).toISOString(), cpu_stats: { cpu_usage: { total_usage: 1250 }, system_cpu_usage: 2000, online_cpus: 4 }, precpu_stats: { cpu_usage: { total_usage: 1000 }, system_cpu_usage: 1000 }, memory_stats: { usage: 300 * 1024 ** 2, limit: 1024 ** 3, stats: { inactive_file: 100 * 1024 ** 2 } }, networks: { eth0: { rx_bytes: 1024 ** 2, tx_bytes: 2 * 1024 ** 2 } } })); return }
+  if (!/^\/v[0-9.]+\/containers\/json/.test(request.url ?? '')) { response.writeHead(403); response.end(); return }
+  response.end(JSON.stringify([
+    { Id: 'a'.repeat(64), Names: ['/browser-docker'], Image: 'example/test-only', State: 'running', Status: 'Up 1 hour (healthy)', Health: { Status: 'healthy' }, Labels: { 'com.docker.compose.project': 'e2e-compose', 'com.docker.compose.service': 'browser-docker', 'com.docker.compose.project.config_files': composeFile }, Ports: [{ IP: '0.0.0.0', PublicPort: 31080, PrivatePort: 3000, Type: 'tcp' }] },
+    { Id: 'b'.repeat(64), Names: ['/unhealthy-worker'], Image: 'example/worker', State: 'running', Status: 'Up 1 hour (unhealthy)', Health: { Status: 'unhealthy' }, Labels: { 'com.docker.compose.project': 'workers' }, Ports: [] },
+    { Id: 'c'.repeat(64), Names: ['/stopped-worker'], Image: 'example/worker', State: 'exited', Status: 'Exited (0)', Labels: {}, Ports: [] },
+  ]))
 })
 await new Promise((resolve, reject) => { fakeDocker.once('error', reject); fakeDocker.listen(18081, '127.0.0.1', resolve) })
 const iconPNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64')
 let webChecks = 0
+let addonReads = 0
 const fakeWeb = http.createServer((request, response) => {
+  if (request.url === '/__addon_checks') { response.setHeader('Content-Type', 'application/json'); response.end(JSON.stringify({ checks: addonReads })); return }
+  if (request.url === '/addon/status') {
+    addonReads++
+    response.setHeader('Content-Type', 'application/json')
+    if (request.headers.authorization !== 'Bearer e2e-addon-token' || request.headers.cookie !== 'session=e2e-addon-cookie') { response.writeHead(401); response.end(JSON.stringify({ error: 'fixture authentication missing' })); return }
+    response.end(JSON.stringify({ metrics: { active: 0, load: 0.25 }, items: ['first', 'second'], status: 'healthy', echo: 'e2e-addon-token', cookie: 'session=e2e-addon-cookie' })); return
+  }
   if (request.url === '/__checks') { response.setHeader('Content-Type', 'application/json'); response.end(JSON.stringify({ checks: webChecks })); return }
   if (request.method === 'HEAD') webChecks++
   if (request.url === '/icon.png' || request.url === '/favicon.ico') { response.setHeader('Content-Type', 'image/png'); response.end(iconPNG); return }
