@@ -11,9 +11,22 @@ services:
       DASHBOARD_COOKIE_SECURE: "${DASHBOARD_COOKIE_SECURE:-false}"
       DASHBOARD_LOG_LEVEL: "${DASHBOARD_LOG_LEVEL:-info}"
       DASHBOARD_LOG_FORMAT: "${DASHBOARD_LOG_FORMAT:-json}"
-      DASHBOARD_DOCKER_HOST: "${DASHBOARD_DOCKER_HOST:-}"
+      DASHBOARD_DOCKER_HOST: "${DASHBOARD_DOCKER_HOST:-tcp://docker-proxy:2375}"
+      DASHBOARD_HOST_PROC: /host/proc
+      DASHBOARD_HOST_SYS: /host/sys
+      DASHBOARD_HOST_ROOT: /host/root
+      DASHBOARD_HOST_DISK: /host/root
+      DASHBOARD_HOST_NAME: "${DASHBOARD_HOST_NAME:-home-server}"
     volumes:
       - dashboard-data:/data
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host/root:ro,rslave
+    networks:
+      - default
+      - monitoring
+    depends_on:
+      - docker-proxy
     read_only: true
     cap_drop:
       - ALL
@@ -22,5 +35,25 @@ services:
     tmpfs:
       - /tmp:size=16m,mode=1777
 
+  docker-proxy:
+    image: ghcr.io/tecnativa/docker-socket-proxy:v0.4.2
+    restart: unless-stopped
+    environment:
+      CONTAINERS: "1"
+      INFO: "1"
+      PING: "1"
+      VERSION: "1"
+      POST: "0"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - monitoring
+    security_opt:
+      - no-new-privileges:true
+
 volumes:
   dashboard-data:
+
+networks:
+  monitoring:
+    internal: true
