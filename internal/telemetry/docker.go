@@ -60,8 +60,6 @@ func (c *Collector) collectDocker(ctx context.Context) domain.DockerSnapshot {
 	}
 	sort.Slice(rows.Items, func(i, j int) bool { return containerName(rows.Items[i]) < containerName(rows.Items[j]) })
 	snapshot.Containers = make([]domain.ContainerSnapshot, len(rows.Items))
-	var wg sync.WaitGroup
-	semaphore := make(chan struct{}, 4)
 	for index, row := range rows.Items {
 		item := domain.ContainerSnapshot{ID: row.ID, Name: containerName(row), Image: row.Image, Project: row.Labels["com.docker.compose.project"], State: string(row.State), Status: row.Status, Health: "none"}
 		if row.Health != nil {
@@ -80,6 +78,55 @@ func (c *Collector) collectDocker(ctx context.Context) domain.DockerSnapshot {
 			continue
 		}
 		snapshot.Running++
+	}
+	if snapshot.Running > 0 {
+		previous := collectDockerStats(ctx, engine, snapshot.Containers)
+		// Wait once between complete sweeps so every container has a CPU baseline.
+		timer := time.NewTimer(time.Second)
+		defer timer.Stop()
+		var current []dockerSample
+		select {
+		case <-timer.C:
+			current = collectDockerStats(ctx, engine, snapshot.Containers)
+		case <-ctx.Done():
+			current = make([]dockerSample, len(snapshot.Containers))
+			for index := range current {
+				current[index].err = "수집 시간 초과"
+			}
+		}
+		for index := range snapshot.Containers {
+			item := &snapshot.Containers[index]
+			if item.State != "running" {
+				continue
+			}
+			if current[index].err == "" {
+				applyStats(item, current[index].stats, previous[index].stats)
+				item.StatsError = previous[index].err
+			} else {
+				item.StatsError = current[index].err
+				if previous[index].err == "" {
+					applyStats(item, previous[index].stats, container.StatsResponse{})
+				}
+			}
+		}
+	}
+	snapshot.MeasuredAt = time.Now().UTC()
+	return snapshot
+}
+
+type dockerSample struct {
+	stats container.StatsResponse
+	err   string
+}
+
+func collectDockerStats(ctx context.Context, engine *client.Client, items []domain.ContainerSnapshot) []dockerSample {
+	samples := make([]dockerSample, len(items))
+	var wg sync.WaitGroup
+	semaphore := make(chan struct{}, 4)
+	for index, item := range items {
+		if item.State != "running" {
+			continue
+		}
 		wg.Add(1)
 		go func(index int, id string) {
 			defer wg.Done()
@@ -87,28 +134,27 @@ func (c *Collector) collectDocker(ctx context.Context) domain.DockerSnapshot {
 			case semaphore <- struct{}{}:
 				defer func() { <-semaphore }()
 			case <-ctx.Done():
-				snapshot.Containers[index].StatsError = "수집 시간 초과"
+				samples[index].err = "수집 시간 초과"
 				return
 			}
 			readCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
 			defer cancel()
-			stats, err := engine.ContainerStats(readCtx, id, client.ContainerStatsOptions{IncludePreviousSample: true})
+			stats, err := engine.ContainerStats(readCtx, id, client.ContainerStatsOptions{IncludePreviousSample: false})
 			if err != nil {
-				snapshot.Containers[index].StatsError = "사용량을 읽지 못했습니다."
+				samples[index].err = "사용량을 읽지 못했습니다."
 				return
 			}
 			defer stats.Body.Close()
 			var sample container.StatsResponse
 			if err := json.NewDecoder(io.LimitReader(stats.Body, 1<<20)).Decode(&sample); err != nil {
-				snapshot.Containers[index].StatsError = "사용량 응답을 읽지 못했습니다."
+				samples[index].err = "사용량 응답을 읽지 못했습니다."
 				return
 			}
-			applyStats(&snapshot.Containers[index], sample)
-		}(index, row.ID)
+			samples[index].stats = sample
+		}(index, item.ID)
 	}
 	wg.Wait()
-	snapshot.MeasuredAt = time.Now().UTC()
-	return snapshot
+	return samples
 }
 
 func containerName(row container.Summary) string {
@@ -121,13 +167,15 @@ func containerName(row container.Summary) string {
 	return row.ID
 }
 
-func applyStats(item *domain.ContainerSnapshot, sample container.StatsResponse) {
-	current, previous := sample.CPUStats, sample.PreCPUStats
+func applyStats(item *domain.ContainerSnapshot, sample, baseline container.StatsResponse) {
+	current, previous := sample.CPUStats, baseline.CPUStats
 	cores := current.OnlineCPUs
 	if cores == 0 {
 		cores = uint32(len(current.CPUUsage.PercpuUsage))
 	}
-	if !sample.PreRead.IsZero() && current.SystemUsage > previous.SystemUsage && current.CPUUsage.TotalUsage >= previous.CPUUsage.TotalUsage && cores > 0 {
+	if !baseline.Read.IsZero() && sample.Read.After(baseline.Read) &&
+		previous.SystemUsage > 0 && current.SystemUsage > previous.SystemUsage &&
+		current.CPUUsage.TotalUsage >= previous.CPUUsage.TotalUsage && cores > 0 {
 		percent := float64(current.CPUUsage.TotalUsage-previous.CPUUsage.TotalUsage) / float64(current.SystemUsage-previous.SystemUsage) * float64(cores) * 100
 		item.CPUPercent = &percent
 	}

@@ -90,7 +90,7 @@ Docker SDK는 OS 기본 named pipe/socket 또는 지정 endpoint를 사용하며
 
 배경은 PNG/JPEG/WebP, 8MiB·6000px·2400만 화소로 제한한다. SHA-256 ID와 원자적 파일 교체를 사용하고 인증·CSRF·본문 제한을 적용한다. 새 설정이 참조하는 배경 파일의 존재를 검사한다.
 
-`/monitoring/host`, `/monitoring/docker`는 로그인 후 조회한다. 5초 공유 캐시와 singleflight로 여러 탭의 요청을 합친다. 상태 화면을 열어둔 동안만 수동 또는 10/30/60초 간격으로 조회하며 백그라운드 탭의 주기적 조회는 멈춘다. Docker는 전체 목록, info, 실행 중 컨테이너 Stats를 읽고 CPU의 paired sample·Linux 메모리 cache·누적 네트워크를 계산한다. Stats는 최대 4개 동시·개별 3초, 수집 전체는 12초로 제한한다. 구형 Engine 건강 상태는 Status 문자열에서 읽는다. 미지원·실패 지표는 null이며 부분 실패가 전체 목록을 지우지 않는다.
+`/monitoring/host`, `/monitoring/docker`는 로그인 후 조회한다. 5초 공유 캐시와 singleflight로 여러 탭의 요청을 합친다. 상태 화면을 열어둔 동안만 수동 또는 10/30/60초 간격으로 조회하며 백그라운드 탭의 주기적 조회는 멈춘다. Docker는 전체 목록, info, 실행 중 컨테이너 Stats를 읽는다. Stats는 `IncludePreviousSample: false`인 one-shot으로 전체 대상을 수집한 뒤 공통으로 1초 기다리고 다시 수집한다. CPU는 두 응답의 CPU·시스템 누적 사용량 차이로 계산하며, 이전 샘플이 없거나 카운터가 감소하거나 측정 시각이 진행하지 않으면 null이다. 메모리는 Linux inactive file cache를 제외하고 네트워크는 누적 바이트를 표시한다. 한 샘플만 성공해도 해당 샘플의 메모리·네트워크와 수집 오류를 표시한다. Stats는 최대 4개 동시·개별 3초, 수집 전체는 12초로 제한한다. 구형 Engine 건강 상태는 Status 문자열에서 읽는다. 미지원·실패 지표는 null이며 부분 실패가 전체 목록을 지우지 않는다.
 
 수집기의 요청 hook은 ping/version/info/목록/Stats GET만 허용한다. 가져오기의 기존 EngineReader는 ping/version/목록만 허용한다. 환경변수·로그·Inspect·제어 API는 조회하지 않는다. Linux 호스트 마운트는 proc/sys/root가 모두 설정돼야 host로 표시한다. 기본 컨테이너 실행 환경과 Docker Desktop Linux VM을 Windows 전체 호스트로 표시하지 않는다.
 

@@ -96,7 +96,7 @@ JSON 정의를 직접 편집하거나 다른 사람의 `.web-dash.json` 파일�
 
 직접 실행할 때 호스트 CPU·RAM·디스크·가동 시간을 수집한다. 기본 디스크는 Linux `/`, Windows는 실행 작업 폴더가 있는 드라이브다. `DASHBOARD_HOST_DISK`에 다른 디렉터리나 드라이브를 지정할 수 있고 `DASHBOARD_HOST_NAME`으로 표시 이름을 설정한다.
 
-Docker는 OS 기본 socket/named pipe, `DOCKER_HOST`, 또는 `DASHBOARD_DOCKER_HOST`를 사용한다. 전체 컨테이너를 조회하고 실행 중인 컨테이너에만 Stats를 요청한다. Linux CPU는 두 샘플의 차이로 계산하고 메모리는 inactive file cache를 제외한다. 네트워크는 누적 송수신 바이트다. Windows 컨테이너에서 제공하지 않는 지표, 종료된 컨테이너, 권한이 없는 Stats는 `—`로 표시한다.
+Docker는 OS 기본 socket/named pipe, `DOCKER_HOST`, 또는 `DASHBOARD_DOCKER_HOST`를 사용한다. 전체 컨테이너를 조회하고 실행 중인 컨테이너에만 대기 없는 one-shot Stats를 요청한다. 전체 대상의 첫 수집을 마친 뒤 1초 기다리고 다시 수집한다. Linux CPU는 두 샘플의 차이로 계산하고 메모리는 inactive file cache를 제외한다. 네트워크는 누적 송수신 바이트다. 한 샘플만 성공하면 CPU는 `—`로 표시하고 메모리·네트워크는 성공한 샘플을 사용한다. Windows 컨테이너에서 제공하지 않는 지표, 종료된 컨테이너, 권한이 없는 Stats는 `—`로 표시한다.
 
 수집 요청은 5초 캐시로 합치고 Stats는 최대 4개 동시 요청·개별 3초·전체 12초로 제한한다. 호출 hook은 ping, version, info, 목록, stats 조회만 허용한다. 일부 사용량 조회가 실패해도 컨테이너 목록을 유지한다. 연결 실패는 설정 안내와 함께 표시하며 가짜 사용량을 만들지 않는다.
 

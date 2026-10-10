@@ -17,6 +17,7 @@ import (
 
 func TestDockerCollectsAllStatesResourcesAndSharesConcurrentReads(t *testing.T) {
 	var lists atomic.Int32
+	var statsReads atomic.Int32
 	engine := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/_ping" {
 			w.Header().Set("API-Version", "1.56")
@@ -41,10 +42,14 @@ func TestDockerCollectsAllStatesResourcesAndSharesConcurrentReads(t *testing.T) 
 		case strings.Contains(r.URL.Path, strings.Repeat("c", 64)):
 			w.WriteHeader(403)
 		case strings.HasSuffix(r.URL.Path, "/stats"):
-			if r.URL.Query().Get("stream") != "false" || r.URL.Query().Get("one-shot") == "true" {
-				t.Error("stats must request bounded, paired samples")
+			if r.URL.Query().Get("stream") != "false" || r.URL.Query().Get("one-shot") != "true" {
+				t.Error("stats must request immediate one-shot samples")
 			}
-			_, _ = w.Write([]byte(`{"preread":"2026-10-09T00:00:00Z","read":"2026-10-09T00:00:01Z","cpu_stats":{"cpu_usage":{"total_usage":1250},"system_cpu_usage":2000,"online_cpus":4},"precpu_stats":{"cpu_usage":{"total_usage":1000},"system_cpu_usage":1000},"memory_stats":{"usage":300,"limit":1000,"stats":{"inactive_file":100}},"networks":{"eth0":{"rx_bytes":100,"tx_bytes":200},"eth1":{"rx_bytes":50,"tx_bytes":25}}}`))
+			if statsReads.Add(1) == 1 {
+				_, _ = w.Write([]byte(`{"read":"2026-10-09T00:00:00Z","cpu_stats":{"cpu_usage":{"total_usage":1000},"system_cpu_usage":1000,"online_cpus":4},"memory_stats":{"usage":100,"limit":1000},"networks":{"eth0":{"rx_bytes":10,"tx_bytes":20}}}`))
+			} else {
+				_, _ = w.Write([]byte(`{"read":"2026-10-09T00:00:01Z","cpu_stats":{"cpu_usage":{"total_usage":1250},"system_cpu_usage":2000,"online_cpus":4},"memory_stats":{"usage":300,"limit":1000,"stats":{"inactive_file":100}},"networks":{"eth0":{"rx_bytes":100,"tx_bytes":200},"eth1":{"rx_bytes":50,"tx_bytes":25}}}`))
+			}
 		default:
 			t.Errorf("unexpected endpoint %s", r.URL.Path)
 			w.WriteHeader(403)
@@ -81,6 +86,9 @@ func TestDockerCollectsAllStatesResourcesAndSharesConcurrentReads(t *testing.T) 
 	if lists.Load() != 1 {
 		t.Errorf("concurrent reads hit Engine %d times", lists.Load())
 	}
+	if statsReads.Load() != 2 {
+		t.Errorf("concurrent reads took %d samples, want 2", statsReads.Load())
+	}
 }
 
 func TestDockerDisconnectedIsAnExplicitEmptySnapshot(t *testing.T) {
@@ -111,18 +119,41 @@ func TestDockerHookRejectsControlSecretsAndUnboundedEndpoints(t *testing.T) {
 }
 
 func TestMissingAndResetStatsDoNotBecomeZeroOrOverflow(t *testing.T) {
-	for _, raw := range []string{
-		`{}`, `{"preread":"2026-10-09T00:00:00Z","cpu_stats":{"cpu_usage":{"total_usage":100},"system_cpu_usage":100,"online_cpus":4},"precpu_stats":{"cpu_usage":{"total_usage":200},"system_cpu_usage":200}}`,
+	for _, raw := range []struct{ sample, baseline string }{
+		{`{}`, `{}`},
+		{`{"read":"2026-10-09T00:00:01Z","preread":"2026-10-09T00:00:00Z","cpu_stats":{"cpu_usage":{"total_usage":200},"system_cpu_usage":200,"online_cpus":4},"precpu_stats":{"cpu_usage":{"total_usage":100},"system_cpu_usage":100}}`, `{}`},
+		{`{"read":"2026-10-09T00:00:01Z","cpu_stats":{"cpu_usage":{"total_usage":200},"system_cpu_usage":200,"online_cpus":4}}`, `{"read":"2026-10-09T00:00:00Z"}`},
+		{`{"read":"2026-10-09T00:00:01Z","cpu_stats":{"cpu_usage":{"total_usage":100},"system_cpu_usage":300,"online_cpus":4}}`, `{"read":"2026-10-09T00:00:00Z","cpu_stats":{"cpu_usage":{"total_usage":200},"system_cpu_usage":200}}`},
+		{`{"read":"2026-10-09T00:00:01Z","cpu_stats":{"cpu_usage":{"total_usage":300},"system_cpu_usage":100,"online_cpus":4}}`, `{"read":"2026-10-09T00:00:00Z","cpu_stats":{"cpu_usage":{"total_usage":200},"system_cpu_usage":200}}`},
+		{`{"read":"2026-10-09T00:00:00Z","cpu_stats":{"cpu_usage":{"total_usage":300},"system_cpu_usage":300,"online_cpus":4}}`, `{"read":"2026-10-09T00:00:00Z","cpu_stats":{"cpu_usage":{"total_usage":200},"system_cpu_usage":200}}`},
 	} {
-		var sample container.StatsResponse
-		if err := json.Unmarshal([]byte(raw), &sample); err != nil {
+		var sample, baseline container.StatsResponse
+		if err := json.Unmarshal([]byte(raw.sample), &sample); err != nil {
+			t.Fatal(err)
+		}
+		if err := json.Unmarshal([]byte(raw.baseline), &baseline); err != nil {
 			t.Fatal(err)
 		}
 		var item domain.ContainerSnapshot
-		applyStats(&item, sample)
+		applyStats(&item, sample, baseline)
 		if item.CPUPercent != nil || item.Memory != nil || item.NetworkRX != nil {
 			t.Fatalf("fabricated metrics: %+v", item)
 		}
+	}
+}
+
+func TestDockerIdleCPUIsZeroWithPerCPUCoreFallback(t *testing.T) {
+	var sample, baseline container.StatsResponse
+	if err := json.Unmarshal([]byte(`{"read":"2026-10-09T00:00:00Z","cpu_stats":{"cpu_usage":{"total_usage":0},"system_cpu_usage":1000}}`), &baseline); err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal([]byte(`{"read":"2026-10-09T00:00:01Z","cpu_stats":{"cpu_usage":{"total_usage":0,"percpu_usage":[0,0,0,0]},"system_cpu_usage":2000}}`), &sample); err != nil {
+		t.Fatal(err)
+	}
+	var item domain.ContainerSnapshot
+	applyStats(&item, sample, baseline)
+	if item.CPUPercent == nil || *item.CPUPercent != 0 {
+		t.Fatalf("idle container must report a measured zero: %+v", item)
 	}
 }
 
