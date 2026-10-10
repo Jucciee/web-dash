@@ -15,7 +15,7 @@ export function AddonValues({ manifest, snapshot }: { manifest: AddonManifest; s
     return <div className={`addon-metric ${styles.metric}`} key={`${field.path}-${index}`}><span>{field.label}</span><strong>{value && !value.missing ? value.value : '—'}{value && !value.missing && value.unit && <small>{value.unit}</small>}</strong>{value?.missing && <small>경로·표시 형식 확인</small>}</div>
   })}</div>
 }
-function AddonWidget({ addon }: { addon: Addon }) {
+export function AddonWidget({ addon }: { addon: Addon }) {
   const interval = addon.manifest.refreshSeconds
   const query = useQuery({ queryKey: ['addons', 'snapshot', addon.id, addon.revision], queryFn: () => api.readAddon(addon.id), staleTime: 5000, refetchInterval: interval ? interval * 1000 : false, refetchIntervalInBackground: false, refetchOnWindowFocus: interval > 0, refetchOnReconnect: interval > 0 })
   return <section className={`addon-widget ${styles.widget}`} data-addon={addon.id} aria-label={`${addon.manifest.name} 애드온`}><div className={styles.widgetHead}><h2><ServiceIcon iconKey={addon.manifest.icon} size={18} />{addon.manifest.name}</h2><Button variant="ghost" className="icon-button" aria-label={`${addon.manifest.name} 새로고침`} loading={query.isFetching} onClick={() => void query.refetch()}><RefreshCw size={16} /></Button></div>

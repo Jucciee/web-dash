@@ -7,6 +7,7 @@ import { AuthPage } from '../features/auth/AuthPage'
 import { DashboardPage } from '../features/dashboard/DashboardPage'
 import { MonitoringPage } from '../features/monitoring/MonitoringPage'
 import { AddonsPage } from '../features/addons/AddonsPage'
+import { HomeLayoutPage } from '../features/layout/HomeLayoutPage'
 import { SettingsPage } from '../features/settings/SettingsPage'
 import { ImportPage } from '../features/imports/ImportPage'
 import { AppShell } from './AppShell'
@@ -41,6 +42,7 @@ function Bootstrap() {
       <Route path="hosts" element={<MonitoringPage kind="host" />} />
       <Route path="settings" element={<SettingsPage />} />
       <Route path="settings/addons" element={<AddonsPage />} />
+      <Route path="settings/layout" element={<HomeLayoutPage />} />
       <Route path="settings/services" element={<DashboardPage manage />} />
       <Route path="settings/imports" element={<ImportPage />} />
       <Route path="*" element={<NotFound />} />

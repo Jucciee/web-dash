@@ -379,6 +379,9 @@ func Wrap(next http.Handler, sessions func(http.Handler) http.Handler, key []byt
 			w.Header().Set("Cache-Control", "no-store")
 		}
 		bodyLimit := int64(64 << 10)
+		if r.Method == http.MethodPatch && r.URL.Path == "/api/v1/settings" {
+			bodyLimit = 256 << 10
+		}
 		if r.Method == http.MethodPost && r.URL.Path == "/api/v1/imports/preview" {
 			bodyLimit = 12 << 20
 		}

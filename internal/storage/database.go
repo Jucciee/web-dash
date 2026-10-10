@@ -84,6 +84,7 @@ func Open(path string) (*gorm.DB, error) {
 			return tx.Model(&DashboardModel{}).Where("name IN ?", []string{"내 홈서버", "나의 홈서버"}).Updates(map[string]any{"name": "web-dash", "revision": gorm.Expr("revision + 1")}).Error
 		}},
 		{ID: "20261010_api_addons", Migrate: func(tx *gorm.DB) error { return tx.AutoMigrate(&AddonModel{}) }},
+		{ID: "20261010_home_layout", Migrate: func(tx *gorm.DB) error { return tx.AutoMigrate(&SettingsModel{}) }},
 	}).Migrate(); err != nil {
 		pool.Close()
 		return nil, fmt.Errorf("migrate sqlite: %w", err)

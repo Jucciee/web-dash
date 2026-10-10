@@ -3,7 +3,7 @@
 .page { max-width: 1000px; }
 .heading { display: grid; gap: var(--space-xs); margin-bottom: var(--space-xl); }
 .heading > p:last-child { color: var(--color-muted); }
-.shortcuts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-xl); border-block: var(--rule-width) solid var(--color-rule); padding-block: var(--space-lg); margin-bottom: var(--space-xl); }
+.shortcuts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: var(--space-xl); border-block: var(--rule-width) solid var(--color-rule); padding-block: var(--space-lg); margin-bottom: var(--space-xl); }
 .shortcuts a { display: flex; align-items: center; gap: var(--space-md); color: var(--color-ink); min-height: 64px; padding: var(--space-xs); }
 .shortcuts a:hover { background: var(--color-soft); text-decoration: none; }
 .shortcuts a:active { background: var(--color-accent-soft); }

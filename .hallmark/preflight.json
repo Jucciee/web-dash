@@ -8,6 +8,6 @@
   "existingPalette": "Cobalt OKLCH tokens in tokens.css",
   "motion": "CSS only; reduced motion supported",
   "spacing": "4pt",
-  "scope": "In-place visual settings, scoped preview, Docker/host panels and declarative API addon editor/widgets",
+  "scope": "In-place settings and shared home sections for links/addons/host/Docker with drag, resize, keyboard controls and scoped previews",
   "source": "web/package.json, tokens.css, web/src/styles/global.css"
 }

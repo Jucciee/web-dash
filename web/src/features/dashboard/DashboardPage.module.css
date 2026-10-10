@@ -17,10 +17,12 @@
 .homeCard { display: flex; align-items: center; gap: var(--space-md); min-width: 0; min-height: 96px; padding: var(--space-lg) var(--space-md); border: var(--rule-width) solid var(--color-rule); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-ink); transition: border-color var(--dur-micro) var(--ease-out); }
 .homeCard:hover { border-color: var(--color-muted); text-decoration: none; }
 .homeCard:active { background: var(--color-soft); }
-.homeCard > svg { color: var(--color-muted); }
+.homeCard > svg { color: var(--color-muted); flex-shrink: 0; }
 .homeCardCopy { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: var(--space-2xs); }
 .homeCardCopy strong { font-size: var(--text-sm); font-weight: 500; overflow-wrap: anywhere; }
 .homeCardCopy small { display: block; color: var(--color-muted); font-size: var(--text-xs); overflow-wrap: anywhere; }
+.homeCardDetails { display: flex; flex-direction: column; gap: var(--space-2xs); min-width: 0; }
+.homeCardDetails:empty { display: none; }
 .homeEmpty { padding-block: var(--space-2xl); display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-md); border-top: var(--rule-width) solid var(--color-rule); }
 .homeEmpty p { color: var(--color-muted); }
 :global(html[data-compact='true']) .homeCard { min-height: 72px; padding-block: var(--space-sm); }
@@ -33,6 +35,35 @@
 :global([data-appearance][data-card-style='tile']) .homeCard { position: relative; flex-direction: column; align-items: flex-start; min-height: 124px; }
 :global([data-appearance][data-card-style='tile']) .homeCard > svg { position: absolute; top: var(--space-sm); right: var(--space-sm); }
 :global([data-appearance][data-card-style='list']) .homeCard { min-height: 56px; padding-block: var(--space-sm); background: transparent; border-width: 0 0 var(--rule-width); border-radius: 0; }
+/* Fixed-size cards reserve the name before fitting optional details. */
+:global([data-appearance]) .homeCard.homeCardFit { min-height: 0; height: 100%; padding-block: var(--space-sm); overflow: hidden; }
+.homeCardFit .homeCardCopy { min-height: 0; max-height: 100%; overflow: hidden; }
+.homeCardFit .homeCardCopy strong { flex-shrink: 0; line-height: 1.5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.homeCardFit .homeCardDetails { flex: 0 1 auto; min-height: 0; overflow: hidden; }
+.homeCardFit .homeCardDetails > * { flex-shrink: 0; }
+.homeCardFit :global(.service-description) { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.homeCardFit :global(.service-url) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+:global([data-appearance][data-card-style='tile']) .homeCardFit .homeCardCopy { width: 100%; }
+@container home-card (max-height: 96px) {
+  :global([data-appearance]) .homeCard.homeCardFit { padding-block: var(--space-xs); gap: var(--space-xs); }
+  .homeCardFit .serviceIcon { width: 32px; height: 32px; }
+  .homeCardFit :global(.service-url) { display: none; }
+}
+@container home-card (max-height: 128px) {
+  :global([data-appearance][data-card-style='tile']) .homeCardFit .serviceIcon { display: none; }
+  .homeCardFit :global(.service-description) { -webkit-line-clamp: 1; }
+  .homeCardFit .webStatus { display: none; }
+}
+@container home-card (max-height: 224px) {
+  :global([data-appearance][data-card-style='tile']) .homeCardFit :global(.service-url), :global([data-appearance][data-card-style='tile']) .homeCardFit .webStatus { display: none; }
+}
+@container home-card (max-height: 56px) { .homeCardFit .homeCardDetails { display: none; } }
+@container home-card (max-width: 180px) {
+  .homeCard.homeCardFit { gap: var(--space-xs); padding-inline: var(--space-xs); }
+  .homeCardFit > svg { display: none; }
+  .homeCardFit .serviceIcon { width: 28px; height: 28px; }
+}
+@container home-card (max-width: 120px) { .homeCardFit .serviceIcon { display: none; } }
 :global([data-appearance][data-columns]:not([data-columns='0'])) .homeGroups { grid-template-columns: repeat(var(--home-columns), minmax(0, 1fr)); }
 :global([data-appearance][data-layout='rows']) .homeGroups { grid-template-columns: minmax(0, 1fr); }
 :global([data-appearance][data-layout='rows']:not([data-columns='0'])) .homeCards { grid-template-columns: repeat(var(--home-columns), minmax(0, 1fr)); }

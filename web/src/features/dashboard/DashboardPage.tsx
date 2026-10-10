@@ -13,6 +13,7 @@ import { useSettings } from '../settings/useSettings'
 import { defaultAppearance, defaultWidgets } from '../settings/defaults'
 import { HomeWidgets } from '../monitoring/MonitoringPanels'
 import { AddonWidgets } from '../addons/AddonWidgets'
+import { CustomHome } from '../layout/CustomHome'
 import styles from './DashboardPage.module.css'
 
 export function DashboardPage({ manage = false }: { manage?: boolean }) {
@@ -87,6 +88,7 @@ export function DashboardPage({ manage = false }: { manage?: boolean }) {
   const normalizedSearch = search.trim().toLocaleLowerCase()
   const visible = (service: Service) => (showHidden || !service.hidden) && [service.name, service.url, service.description].some(value => value.toLocaleLowerCase().includes(normalizedSearch))
   const visibleCount = allServices.filter(visible).length
+  const customLayout = settings.data?.homeLayout.mode === 'custom'
   if (list.isError || query.isError) return <ErrorNotice error={list.error ?? query.error} onRetry={() => { void list.refetch(); void query.refetch() }} />
   if (list.isPending || (!!dashboardId && query.isPending)) return <p className="helper" role="status">링크를 불러오는 중…</p>
   if (!dashboard) return <ErrorNotice error={new Error('기본 대시보드를 찾을 수 없습니다. 서버 데이터를 확인해주세요.')} />
@@ -94,18 +96,18 @@ export function DashboardPage({ manage = false }: { manage?: boolean }) {
     {(appearance.showTitle || appearance.showClock) && <div className={styles.homeHeading}><div>{appearance.showTitle && <><h1>{settings.data?.title ?? dashboard.name}</h1>{settings.data?.subtitle && <p className={styles.subtitle}>{settings.data.subtitle}</p>}</>}</div>{appearance.showClock && <time className={styles.clock} dateTime={now.toISOString()}><strong>{now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })}</strong><span>{now.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}</span></time>}</div>}
     {appearance.showSearch && <label className={`${styles.search} ${styles.homeSearch}`}><Search size={18} aria-hidden="true" /><span className="sr-only">링크 검색</span><input type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="링크 찾기" /></label>}
     {settings.isError && <ErrorNotice error={settings.error} onRetry={() => void settings.refetch()} />}
-    {settings.data && <HomeWidgets settings={settings.data.widgets ?? defaultWidgets} />}
-    <AddonWidgets />
+    {!customLayout && settings.data && <HomeWidgets settings={settings.data.widgets ?? defaultWidgets} />}
+    {!customLayout && <AddonWidgets />}
     {allServices.length > 0 && appearance.showWebStatus && statusToolbar}
-    {allServices.length === 0 && <section className={styles.homeEmpty}><h2>링크가 없습니다</h2><Link to="/settings/services" className="button">링크 추가</Link><Link to="/settings/imports" className={styles.importHint}>설정 가져오기</Link></section>}
-    {allServices.length > 0 && visibleCount === 0 && <section className={styles.homeEmpty}><h2>표시할 링크가 없습니다</h2><p>{search ? '검색어를 바꿔보세요.' : '숨긴 링크는 설정에서 관리할 수 있습니다.'}</p>{search ? <Button onClick={() => setSearch('')}>검색 지우기</Button> : <Link to="/settings/services" className="button">링크 관리</Link>}</section>}
-    <div className={`home-groups ${styles.homeGroups}`}>{dashboard.groups.map(group => {
+    {!customLayout && allServices.length === 0 && <section className={styles.homeEmpty}><h2>링크가 없습니다</h2><Link to="/settings/services" className="button">링크 추가</Link><Link to="/settings/imports" className={styles.importHint}>설정 가져오기</Link></section>}
+    {!customLayout && allServices.length > 0 && visibleCount === 0 && <section className={styles.homeEmpty}><h2>표시할 링크가 없습니다</h2><p>{search ? '검색어를 바꿔보세요.' : '숨긴 링크는 설정에서 관리할 수 있습니다.'}</p>{search ? <Button onClick={() => setSearch('')}>검색 지우기</Button> : <Link to="/settings/services" className="button">링크 관리</Link>}</section>}
+    {customLayout && settings.data ? <CustomHome dashboard={dashboard} settings={settings.data} statuses={statuses.data} search={search} /> : <div className={`home-groups ${styles.homeGroups}`}>{dashboard.groups.map(group => {
       const cards = group.services.filter(service => !service.hidden && visible(service))
       if (!cards.length) return null
       const isCollapsed = appearance.collapsibleGroups && collapsed.has(group.id) && !search
       const heading = <>{group.name}{appearance.showGroupCounts && <span>{cards.length}</span>}</>
       return <section key={group.id} className={`service-group ${styles.homeGroup}`} aria-label={`${group.name} 그룹`}><h2 className="group-title">{appearance.collapsibleGroups ? <button className={styles.groupToggle} aria-expanded={!isCollapsed} aria-controls={`group-${group.id}`} onClick={() => setCollapsed(current => { const next = new Set(current); next.has(group.id) ? next.delete(group.id) : next.add(group.id); return next })}>{heading}</button> : heading}</h2><div id={`group-${group.id}`} hidden={isCollapsed} className={styles.homeCards}>{cards.map(service => <ServiceCard key={service.id} service={service} status={statusFor(service.id)} appearance={appearance} manage={false} onEdit={() => {}} onDelete={() => {}} onMove={() => {}} first last busy={false} />)}</div></section>
-    })}</div>
+    })}</div>}
   </div>
   return <>
     <div className={styles.pageHeader}><div><p className={styles.breadcrumb}>설정 <span>/</span> 링크</p><h1>링크 관리</h1></div><Button variant="primary" onClick={() => dashboard.groups.length ? setEditor({}) : setGroupEditor({})}><Plus size={18} aria-hidden="true" />{dashboard.groups.length ? '링크 추가' : '그룹 추가'}</Button></div>

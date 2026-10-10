@@ -21,11 +21,12 @@ web-dash 애드온은 **요청과 표시 규칙을 담은 JSON 설정 파일**�
 
 시작용 예제:
 
+- [Immich 사진·동영상·사용량](../examples/addons/immich.web-dash.json) · [설정 방법](../examples/addons/immich.md)
 - [Bearer 인증 JSON API](../examples/addons/json-api.web-dash.json)
 - [Cookie 인증 JSON API와 목록](../examples/addons/cookie-api.web-dash.json)
 - [POST·GraphQL과 API 키](../examples/addons/graphql.web-dash.json)
 
-예제의 `/api/status`·GraphQL 쿼리·응답 경로는 형식을 보여주는 샘플이다. 사용하려는 앱의 API 경로와 JSON 구조에 맞게 수정한다.
+범용 JSON API·Cookie·GraphQL 예제의 `/api/status`·쿼리·응답 경로는 형식을 보여주는 샘플이다. 사용하려는 앱의 API 경로와 JSON 구조에 맞게 수정한다. Immich 예제는 공식 서버 통계 API에 맞춰 작성했다.
 
 ## 설정 파일 구조
 
@@ -104,6 +105,8 @@ URL·헤더·POST 본문에서 입력값을 다음처럼 참조한다.
 `0`과 `false`도 정상 값으로 표시한다. 경로가 없거나 형식이 맞지 않으면 `—`와 확인 안내를 표시한다. 연결 테스트의 선택 목록은 최대 80개·12단계까지 보여 주며 더 깊은 값은 직접 경로를 입력할 수 있다.
 
 ## 연결과 저장
+
+홈에서 링크·호스트·Docker와 함께 묶거나 크기를 바꾸려면 **배치 편집**을 사용한다. 애드온 정의는 유지하고 홈 배치에서 설치 ID만 참조한다. [홈 배치 가이드](10_HOME_LAYOUT.md)를 참고한다.
 
 API는 web-dash 서버가 호출하므로 주소는 **서버에서 접근 가능한 주소**여야 한다. Docker에서 실행할 때 `localhost`는 web-dash 컨테이너다. 같은 Compose 네트워크의 서비스 이름이나 접근 가능한 LAN 주소를 사용한다. 서버 호출이므로 외부 API의 브라우저 CORS 설정에 영향을 받지 않는다.
 

@@ -9,6 +9,7 @@ type Settings struct {
 	CustomCSS  string     `json:"customCss"`
 	Appearance Appearance `json:"appearance"`
 	Widgets    Widgets    `json:"widgets"`
+	HomeLayout HomeLayout `json:"homeLayout"`
 	Revision   int64      `json:"revision"`
 }
 
@@ -21,6 +22,7 @@ type SettingsPatch struct {
 	CustomCSS  *string     `json:"customCss"`
 	Appearance *Appearance `json:"appearance"`
 	Widgets    *Widgets    `json:"widgets"`
+	HomeLayout *HomeLayout `json:"homeLayout"`
 }
 
 // Appearance and Widgets are replaced as a whole, so false and zero values

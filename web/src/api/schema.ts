@@ -2129,6 +2129,7 @@ export interface components {
             customCss: string;
             appearance: components["schemas"]["Appearance"];
             widgets: components["schemas"]["Widgets"];
+            homeLayout: components["schemas"]["HomeLayout"];
             revision: number;
         };
         SettingsPatch: {
@@ -2143,6 +2144,7 @@ export interface components {
             customCss?: string;
             appearance?: components["schemas"]["Appearance"];
             widgets?: components["schemas"]["Widgets"];
+            homeLayout?: components["schemas"]["HomeLayout"];
         };
         ImportFile: {
             /** @description Unique relative virtual path, never a server filesystem path */
@@ -2487,6 +2489,36 @@ export interface components {
         AddonMove: {
             /** @enum {integer} */
             direction: -1 | 1;
+        };
+        HomeItem: {
+            /** @enum {string} */
+            kind: "link" | "addon" | "host" | "docker";
+            /** @description Link/addon UUID; empty for host/docker. Each reference occurs at most once. */
+            refId: string;
+            x: number;
+            y: number;
+            width: number;
+            height: number;
+        };
+        HomeSection: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** @description Section column in the home canvas. Supply x and y together; omitted coordinates preserve older layouts. */
+            x?: number;
+            y?: number;
+            width: number;
+            minRows: number;
+            collapsed: boolean;
+            items: components["schemas"]["HomeItem"][];
+        };
+        HomeLayout: {
+            /** @constant */
+            version: 1;
+            /** @enum {string} */
+            mode: "auto" | "custom";
+            /** @description Auto mode requires an empty array. Custom mode allows at most 500 items total. Sections occupy 12 columns and 65536 rows; section height is its content rows plus one heading row (empty content reserves three rows). Items occupy 12 columns and 4096 rows within each section. Positioned sections and items must not overlap. Missing/deleted references are skipped; new enabled cards appear in a New items section. */
+            sections: components["schemas"]["HomeSection"][];
         };
     };
     responses: never;

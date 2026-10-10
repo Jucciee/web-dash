@@ -2580,6 +2580,9 @@
           "widgets": {
             "$ref": "#/components/schemas/Widgets"
           },
+          "homeLayout": {
+            "$ref": "#/components/schemas/HomeLayout"
+          },
           "revision": {
             "type": "integer",
             "minimum": 1
@@ -2594,6 +2597,7 @@
           "customCss",
           "appearance",
           "widgets",
+          "homeLayout",
           "revision"
         ],
         "additionalProperties": false
@@ -2642,6 +2646,9 @@
           },
           "widgets": {
             "$ref": "#/components/schemas/Widgets"
+          },
+          "homeLayout": {
+            "$ref": "#/components/schemas/HomeLayout"
           }
         },
         "required": [],
@@ -4081,6 +4088,137 @@
         },
         "required": [
           "direction"
+        ],
+        "additionalProperties": false
+      },
+      "HomeItem": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "link",
+              "addon",
+              "host",
+              "docker"
+            ]
+          },
+          "refId": {
+            "type": "string",
+            "description": "Link/addon UUID; empty for host/docker. Each reference occurs at most once."
+          },
+          "x": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 11
+          },
+          "y": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4095
+          },
+          "width": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 12
+          },
+          "height": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 24
+          }
+        },
+        "required": [
+          "kind",
+          "refId",
+          "x",
+          "y",
+          "width",
+          "height"
+        ],
+        "additionalProperties": false
+      },
+      "HomeSection": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "x": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 11,
+            "description": "Section column in the home canvas. Supply x and y together; omitted coordinates preserve older layouts."
+          },
+          "y": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 65535
+          },
+          "width": {
+            "type": "integer",
+            "minimum": 3,
+            "maximum": 12
+          },
+          "minRows": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 48
+          },
+          "collapsed": {
+            "type": "boolean"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HomeItem"
+            },
+            "maxItems": 500
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "width",
+          "minRows",
+          "collapsed",
+          "items"
+        ],
+        "additionalProperties": false
+      },
+      "HomeLayout": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "const": 1
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "custom"
+            ]
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HomeSection"
+            },
+            "maxItems": 60,
+            "description": "Auto mode requires an empty array. Custom mode allows at most 500 items total. Sections occupy 12 columns and 65536 rows; section height is its content rows plus one heading row (empty content reserves three rows). Items occupy 12 columns and 4096 rows within each section. Positioned sections and items must not overlap. Missing/deleted references are skipped; new enabled cards appear in a New items section."
+          }
+        },
+        "required": [
+          "version",
+          "mode",
+          "sections"
         ],
         "additionalProperties": false
       }

@@ -42,6 +42,7 @@ Vite의 `/api` 프록시가 Go 서버로 요청을 전달한다. 브라우저 �
 - 페이지 접속 시 서버의 HTTP 상태 확인과 수동 확인, 링크별 확인 사용 여부
 - 그룹 추가·이름 변경·빈 그룹 삭제, 카드의 그룹 변경
 - 키보드로 조작 가능한 카드 순서 이동, revision을 검사하는 배치 저장 API
+- 링크·애드온·호스트·Docker를 함께 묶는 홈 섹션, 항목·섹션의 자유로운 위치 지정과 크기 조절, 접기와 되돌리기
 - SQLite migration, 실제 외래키, WAL, 트랜잭션, 수정 충돌·CSRF·로그인 요청 제한
 - 별도 설정 페이지, 밝게·어둡게·시스템 테마, 강조색·카드 밀도, 홈 전용 사용자 CSS
 - Docker Compose 폴더 검색과 실행 중 컨테이너의 실제 공개 TCP 포트 가져오기
@@ -60,7 +61,7 @@ Vite의 `/api` 프록시가 Go 서버로 요청을 전달한다. 브라우저 �
 - Go 요청 로그와 시작·종료 로그, 파일 보관과 로그 레벨·형식 설정
 - 반응형 화면, OpenAPI 계약과 생성 DTO, Go 통합 테스트·Playwright 브라우저 테스트
 
-백업·복원과 앱별 사전 설정 모음은 후속 작업이다. Docker·호스트·애드온은 화면을 보고 있을 때 설정한 간격으로 조회한다. 숨긴 위젯이나 닫힌 페이지에서는 갱신하지 않는다. Docker·호스트의 별도 상세 페이지에서는 위젯 표시 여부와 관계없이 조회할 수 있다.
+백업·복원은 후속 작업이다. Docker·호스트·애드온은 화면을 보고 있을 때 설정한 간격으로 조회한다. 숨긴 위젯이나 닫힌 페이지에서는 갱신하지 않는다. Docker·호스트의 별도 상세 페이지에서는 위젯 표시 여부와 관계없이 조회할 수 있다.
 
 ## 홈과 설정
 
@@ -69,6 +70,7 @@ Vite의 `/api` 프록시가 Go 서버로 요청을 전달한다. 브라우저 �
 - `/settings/services`: 카드·그룹 편집, 숨김, 순서 변경, 삭제·되돌리기.
 - `/settings/imports`: Docker 폴더 검색과 Nginx·Caddy 가져오기.
 - `/settings/addons`: API 애드온 작성·연결 테스트·설치·편집·JSON 공유와 순서 설정.
+- `/settings/layout`: 섹션 추가, 링크·위젯 섞기, 위치·너비·높이 편집과 배치 저장.
 - `/connections`: Docker 상태, 이름/프로젝트/이미지 검색과 실행/중지/비정상 필터.
 - `/hosts`: 실제 호스트 지표, 수집 환경과 디스크 경로.
 
@@ -80,11 +82,15 @@ Vite의 `/api` 프록시가 Go 서버로 요청을 전달한다. 브라우저 �
 
 ## API 애드온
 
+링크·호스트·Docker·애드온은 **배치 편집**에서 같은 섹션에 묶고 크기를 바꿀 수 있다. 사용 방법과 저장 규칙은 [홈 배치 가이드](docs/10_HOME_LAYOUT.md)를 참고한다.
+
 **설정 → 애드온**에서 API 주소와 인증 방식을 정하고, 연결 테스트 응답에서 표시할 값을 고른다. Bearer·API 키·Cookie·Basic 인증과 사용자 헤더, GET·JSON POST·GraphQL을 지원한다. 숫자·퍼센트·용량·가동 시간·불리언·항목 개수·텍스트를 지표 카드나 목록으로 표시한다.
 
 JSON 정의를 직접 편집하거나 다른 사람의 `.web-dash.json` 파일을 가져올 수 있다. 파일 가져오기는 편집 화면만 열고 API를 자동 호출하지 않는다. 자신의 서버 주소·인증값을 채워 테스트한 뒤 설치한다. 내보낸 파일에는 개인 연결값이 들어가지 않는다. 저장한 보안 값은 SQLite에서 암호화하며 `data/addon-secret.key`를 DB와 함께 보존해야 한다.
 
 작성 방법과 템플릿·응답 경로는 [API 애드온 가이드](docs/09_ADDONS.md), 시작용 설정은 [예제 파일](examples/addons/json-api.web-dash.json)을 참고한다.
+
+[Immich 예제](examples/addons/immich.web-dash.json)는 서버 주소와 관리자 API 키를 입력하면 사진·동영상 수와 사용량을 표시한다. 키 생성·권한·주소 입력은 [Immich 설정 방법](examples/addons/immich.md)에 정리했다.
 
 ## Docker·호스트 상태
 
@@ -192,6 +198,8 @@ docker compose -f compose.yaml -f compose.monitoring.yaml up -d --build
 | [06_TASKS.md](docs/06_TASKS.md) | 구현 순서, 작업 목록, 검증 기준 |
 | [07_BACKEND_PACKAGES.md](docs/07_BACKEND_PACKAGES.md) | 제작을 쉽게 하는 Go 패키지 조합, 설치와 사용 기준 |
 | [08_DEVELOPMENT.md](docs/08_DEVELOPMENT.md) | 실제 구현 구조, 현재 범위, 검증과 다음 확장 지점 |
+| [09_ADDONS.md](docs/09_ADDONS.md) | 개인 API 애드온 설정과 JSON 공유, Immich 예제 |
+| [10_HOME_LAYOUT.md](docs/10_HOME_LAYOUT.md) | 링크·위젯 섹션, 드래그 배치와 크기 조절 |
 | [openapi.json](docs/openapi.json) | 현재 구현한 API의 OpenAPI 3.1 계약 |
 
 ## 확정된 요구

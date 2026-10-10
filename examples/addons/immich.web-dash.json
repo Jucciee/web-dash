@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "name": "Immich",
+  "icon": "photos",
+  "display": "stats",
+  "refreshSeconds": 60,
+  "request": {
+    "method": "GET",
+    "url": "{{baseUrl}}/api/server/statistics",
+    "headers": [{ "name": "x-api-key", "value": "{{apiKey}}" }],
+    "body": ""
+  },
+  "inputs": [
+    { "key": "baseUrl", "label": "Immich 서버 주소 (/api 제외)", "type": "text", "required": true, "default": "" },
+    { "key": "apiKey", "label": "Immich API 키", "type": "secret", "required": true, "default": "" }
+  ],
+  "fields": [
+    { "label": "사진", "path": "/photos", "format": "number", "unit": "장", "scale": 1, "decimals": 0, "valueMap": {} },
+    { "label": "동영상", "path": "/videos", "format": "number", "unit": "개", "scale": 1, "decimals": 0, "valueMap": {} },
+    { "label": "사용량", "path": "/usage", "format": "bytes", "unit": "", "scale": 1, "decimals": 1, "valueMap": {} }
+  ]
+}

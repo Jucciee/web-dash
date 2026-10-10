@@ -71,6 +71,7 @@ type SettingsModel struct {
 	CustomCSS      string `gorm:"not null"`
 	AppearanceJSON string `gorm:"not null;default:'{}'"`
 	WidgetsJSON    string `gorm:"not null;default:'{}'"`
+	HomeLayoutJSON string `gorm:"not null;default:'{}'"`
 	Revision       int64  `gorm:"not null;default:1"`
 }
 

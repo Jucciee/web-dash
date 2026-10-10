@@ -64,6 +64,16 @@ func (r *Repository) UpdateSettings(ctx context.Context, revision int64, patch d
 			}
 			row.WidgetsJSON = string(encoded)
 		}
+		if patch.HomeLayout != nil {
+			if err := validateHomeLayout(*patch.HomeLayout); err != nil {
+				return err
+			}
+			encoded, err := json.Marshal(patch.HomeLayout)
+			if err != nil {
+				return err
+			}
+			row.HomeLayoutJSON = string(encoded)
+		}
 		if row.Title == "" || utf8.RuneCountInString(row.Title) > 80 || utf8.RuneCountInString(row.Subtitle) > 200 {
 			return &domain.ValidationError{Message: "제목은 1~80자, 설명은 200자까지 입력해주세요."}
 		}
@@ -82,7 +92,7 @@ func (r *Repository) UpdateSettings(ctx context.Context, revision int64, patch d
 		}
 		result := tx.Model(&SettingsModel{}).Where("id = 1 AND revision = ?", revision).Updates(map[string]any{
 			"title": row.Title, "subtitle": row.Subtitle, "theme": row.Theme, "accent": row.Accent, "compact": row.Compact, "custom_css": row.CustomCSS, "revision": revision + 1,
-			"appearance_json": row.AppearanceJSON, "widgets_json": row.WidgetsJSON,
+			"appearance_json": row.AppearanceJSON, "widgets_json": row.WidgetsJSON, "home_layout_json": row.HomeLayoutJSON,
 		})
 		if result.Error != nil {
 			return result.Error
@@ -97,10 +107,11 @@ func (r *Repository) UpdateSettings(ctx context.Context, revision int64, patch d
 }
 
 func toSettings(row SettingsModel) domain.Settings {
-	appearance, widgets := domain.DefaultAppearance(), domain.DefaultWidgets()
+	appearance, widgets, homeLayout := domain.DefaultAppearance(), domain.DefaultWidgets(), domain.DefaultHomeLayout()
 	_ = json.Unmarshal([]byte(row.AppearanceJSON), &appearance)
 	_ = json.Unmarshal([]byte(row.WidgetsJSON), &widgets)
-	return domain.Settings{Title: row.Title, Subtitle: row.Subtitle, Theme: row.Theme, Accent: row.Accent, Compact: row.Compact, CustomCSS: row.CustomCSS, Appearance: appearance, Widgets: widgets, Revision: row.Revision}
+	_ = json.Unmarshal([]byte(row.HomeLayoutJSON), &homeLayout)
+	return domain.Settings{Title: row.Title, Subtitle: row.Subtitle, Theme: row.Theme, Accent: row.Accent, Compact: row.Compact, CustomCSS: row.CustomCSS, Appearance: appearance, Widgets: widgets, HomeLayout: homeLayout, Revision: row.Revision}
 }
 
 var colorPattern = regexp.MustCompile(`^#[a-fA-F0-9]{6}$`)

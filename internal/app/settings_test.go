@@ -3,6 +3,7 @@ package app_test
 import (
 	"io"
 	"net/http"
+	"reflect"
 	"testing"
 
 	"homedashboard/internal/app"
@@ -28,6 +29,16 @@ func TestSettingsRequireAuthPersistAndRejectStaleRevision(t *testing.T) {
 	if updated.Compact {
 		t.Fatal("false settings patch ignored")
 	}
+	sectionX, sectionY := 3, 2
+	layout := domain.HomeLayout{Version: 1, Mode: "custom", Sections: []domain.HomeSection{{ID: "a6e0bf3d-8f29-46ee-aafb-2fa1a65d37b1", Name: "서버", X: &sectionX, Y: &sectionY, Width: 6, Items: []domain.HomeItem{{Kind: "host", Width: 6, Height: 7}, {Kind: "docker", X: 6, Width: 6, Height: 10}}}}}
+	previousRevision := updated.Revision
+	updated = decode[domain.Settings](t, b.request(t, "PATCH", "/settings", map[string]any{"homeLayout": layout}, previousRevision, 200))
+	if !reflect.DeepEqual(updated.HomeLayout, layout) || updated.Theme != "dark" {
+		t.Fatalf("layout-only API save changed other settings: %+v", updated)
+	}
+	b.request(t, "PATCH", "/settings", map[string]any{"homeLayout": layout}, previousRevision, 409)
+	invalid := domain.HomeLayout{Version: 1, Mode: "custom", Sections: []domain.HomeSection{{ID: layout.Sections[0].ID, Name: "bad", Width: 12, Items: []domain.HomeItem{{Kind: "host", Width: 6, Height: 7}, {Kind: "docker", X: 5, Width: 6, Height: 10}}}}}
+	b.request(t, "PATCH", "/settings", map[string]any{"homeLayout": invalid}, updated.Revision, 400)
 	response, err := b.client.Get(server.URL + "/api/v1/settings/custom.css")
 	if err != nil {
 		t.Fatal(err)
@@ -44,7 +55,7 @@ func TestSettingsRequireAuthPersistAndRejectStaleRevision(t *testing.T) {
 	defer server.Close()
 	b.base = server.URL
 	persisted := decode[domain.Settings](t, b.request(t, "GET", "/settings", nil, 0, 200))
-	if persisted.Title != updated.Title || persisted.CustomCSS != updated.CustomCSS {
+	if persisted.Title != updated.Title || persisted.CustomCSS != updated.CustomCSS || !reflect.DeepEqual(persisted.HomeLayout, layout) {
 		t.Fatal("settings did not survive server restart")
 	}
 }
