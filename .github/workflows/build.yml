@@ -114,8 +114,9 @@ jobs:
             --publish 127.0.0.1:8080:8080 \
             --env DASHBOARD_LOG_FILE=- \
             web-dash:ci
+          # Docker can reset connections while the application is still starting.
           curl --fail --silent --show-error \
-            --retry 20 --retry-connrefused --retry-delay 1 --retry-max-time 45 \
+            --retry 20 --retry-all-errors --retry-connrefused --retry-delay 1 --retry-max-time 45 \
             --max-time 5 http://127.0.0.1:8080/api/v1/health/live
           curl --fail --silent --show-error --max-time 5 \
             http://127.0.0.1:8080/ --output "$RUNNER_TEMP/dashboard-index.html"
