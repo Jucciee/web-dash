@@ -162,6 +162,31 @@ npm run test:e2e
 
 환경변수 목록은 [.env.example](.env.example)에 있다. Go는 `.env`를 자동으로 읽지 않으므로 PowerShell의 `$env:DASHBOARD_ADDR='127.0.0.1:8080'`처럼 설정한다. HTTPS로 운영할 때는 `DASHBOARD_COOKIE_SECURE=true`를 적용한다.
 
+## GitHub Actions 이미지 빌드
+
+[`.github/workflows/build.yml`](.github/workflows/build.yml)이 Go 1.26.4와 Node.js 24.21.0으로 빌드한다. Go 테스트·vet, 프론트엔드 레이아웃 테스트·TypeScript 검사·Vite 빌드가 모두 통과하면 Docker 이미지를 만든다. 컨테이너를 직접 실행해 API 상태와 프론트엔드 응답도 확인한다.
+
+| 실행 조건 | 결과 |
+| --- | --- |
+| `main` 대상 Pull Request | Go·Node 빌드와 amd64 컨테이너 실행 검증 |
+| `main` push | 검증 후 `ghcr.io/jucciee/web-dash:latest`, `:main`, `:sha-<전체 커밋 SHA>` 게시 |
+| `v0.3.1` 같은 버전 태그 push | 검증 후 `:0.3.1`, `:0.3`, `:sha-<전체 커밋 SHA>` 게시 |
+| Actions → Run workflow | 선택한 브랜치 빌드·검증. `main` 또는 `v`로 시작하는 태그를 선택하면 게시도 실행 |
+
+게시 이미지는 `linux/amd64`와 `linux/arm64`를 지원한다. 프론트엔드 정적 파일과 Go 서버를 포함하므로 실행할 때 Node.js를 따로 설치할 필요가 없다. `latest`는 `main` 빌드만 갱신한다. 저장소를 fork하면 GHCR 이미지 경로도 해당 소유자·저장소 이름으로 바뀐다.
+
+GHCR 인증에는 워크플로의 `GITHUB_TOKEN`과 `packages: write` 권한을 사용하므로 별도 토큰 Secret을 만들 필요가 없다. 다른 계정에서 로그인 없이 이미지를 받게 하려면 첫 게시 후 GitHub 패키지 설정에서 공개 범위를 Public으로 변경한다. 자세한 인증·공개 범위는 [GitHub Container Registry 안내](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry)를 참고한다.
+
+게시된 이미지로 실행하려면 PowerShell에서 다음 명령을 사용한다. 기본 Compose의 호스트 마운트와 Docker socket proxy는 Linux 서버용이므로 Linux 셸에서는 환경변수를 `export DASHBOARD_IMAGE=ghcr.io/jucciee/web-dash:latest`로 지정한다.
+
+```powershell
+$env:DASHBOARD_IMAGE='ghcr.io/jucciee/web-dash:latest'
+docker compose -f compose.yaml pull dashboard
+docker compose -f compose.yaml up -d --no-build
+```
+
+버전별 배포는 `latest` 대신 `0.3.1` 같은 태그를 지정한다. 로컬에서 빌드하려면 `DASHBOARD_IMAGE`를 해제하고 아래 명령을 사용한다. Go·Node 버전을 변경할 때는 Dockerfile과 워크플로를 함께 갱신한다.
+
 ## Docker 실행
 
 ```powershell
@@ -176,17 +201,11 @@ Get-Content ./setup-token
 Remove-Item -LiteralPath ./setup-token
 ```
 
-LAN 공개가 필요하면 Compose 실행 전에 `$env:DASHBOARD_BIND='0.0.0.0'`를 설정한다. 이 단계의 Compose에는 Docker socket이나 프록시 연동을 추가하지 않았다. Docker 빌드·기동은 Docker가 설치된 환경에서 확인해야 한다.
+LAN 공개가 필요하면 Compose 실행 전에 `$env:DASHBOARD_BIND='0.0.0.0'`를 설정한다. Linux 셸에서는 `export DASHBOARD_BIND=0.0.0.0`을 사용한다.
 
-컨테이너에서 Docker 폴더 검색을 사용하려면 Compose 폴더를 컨테이너에 읽기 전용으로 마운트하고 조회 전용 Docker socket proxy를 연결한다. Compose 경로 라벨과 대조할 수 있도록 호스트와 동일한 절대 경로로 폴더를 마운트한다. 기본 배포 파일은 socket을 자동으로 연결하지 않는다.
+기본 `compose.yaml`은 Linux 홈서버용이다. [Docker socket proxy](https://github.com/Tecnativa/docker-socket-proxy)를 내부 네트워크에 연결해 조회 API만 허용하며 proxy 포트는 공개하지 않는다. 실제 호스트 지표를 위해 `/proc`, `/sys`, `/`를 읽기 전용으로 마운트한다. root 마운트는 디스크 사용량 측정에 사용한다.
 
-Linux 홈서버에서 Docker 상태와 실제 호스트 지표를 함께 켜는 예시:
-
-```sh
-docker compose -f compose.yaml -f compose.monitoring.yaml up -d --build
-```
-
-이 overlay는 [Docker socket proxy](https://github.com/Tecnativa/docker-socket-proxy)를 내부 네트워크에만 연결하고 변경 API를 차단한다. 호스트 `/proc`, `/sys`, `/`를 읽기 전용으로 마운트하므로 이 권한을 줄 web-dash 서버에서 사용한다. 공개 proxy 포트는 만들지 않는다. root 마운트는 디스크 사용량 측정에 사용한다. Docker 폴더 검색까지 사용하려면 Compose 폴더도 호스트와 같은 절대 경로로 추가 마운트해야 한다. Docker Desktop에서는 마운트 출처가 Linux VM이므로 Windows 전체 지표는 Windows에서 직접 서버를 실행해 확인한다.
+컨테이너에서 Docker 폴더 검색까지 사용하려면 Compose 폴더도 읽기 전용으로 추가 마운트한다. Compose 경로 라벨과 대조할 수 있도록 호스트와 동일한 절대 경로를 사용한다. Docker Desktop에서는 마운트 출처가 Linux VM이므로 Windows 전체 지표는 Windows에서 직접 서버를 실행해 확인한다.
 
 ## 읽는 순서
 

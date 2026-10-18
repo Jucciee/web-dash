@@ -1,7 +1,7 @@
 services:
   dashboard:
     container_name: web-dash
-    image: web-dash:0.3.0
+    image: ${DASHBOARD_IMAGE:-web-dash:0.3.0}
     build:
       dockerfile: Dockerfile
     restart: unless-stopped
