@@ -1,6 +1,6 @@
 module homedashboard
 
-go 1.26.0
+go 1.26.10
 
 require (
 	github.com/alexedwards/scs/gormstore v0.0.0-20251002162104-209de6e426de
@@ -20,7 +20,7 @@ require (
 	github.com/shirou/gopsutil/v4 v4.26.7
 	golang.org/x/crypto v0.57.0
 	golang.org/x/image v0.46.0
-	golang.org/x/net v0.59.0
+	golang.org/x/net v0.60.0
 	golang.org/x/sync v0.23.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gorm.io/gorm v1.31.2

@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM --platform=$BUILDPLATFORM node:24.21.0-alpine AS frontend
+FROM --platform=$BUILDPLATFORM node:24.22.1-alpine AS frontend
 WORKDIR /build/web
 COPY web/package.json web/package-lock.json ./
 RUN npm ci --no-audit --no-fund
@@ -7,7 +7,7 @@ COPY tokens.css /build/tokens.css
 COPY web/ ./
 RUN npm run build
 
-FROM --platform=$BUILDPLATFORM golang:1.26.4-alpine AS backend
+FROM --platform=$BUILDPLATFORM golang:1.26.10-alpine AS backend
 WORKDIR /build
 COPY go.mod go.sum ./
 RUN go mod download

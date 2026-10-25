@@ -2,7 +2,7 @@
 
 # web-dash
 
-업데이트: 2026-10-10
+업데이트: 2026-10-25
 
 Nginx 설정 또는 Caddyfile에서 링크를 가져오고, Docker와 호스트 상태를 확인하는 홈서버 대시보드다. 링크·그룹 편집과 화면 설정은 브라우저에서 처리한다.
 
@@ -10,7 +10,9 @@ Nginx 설정 또는 Caddyfile에서 링크를 가져오고, Docker와 호스트 
 
 ## 빠른 실행
 
-Go **1.26 이상**과 Node.js **24 LTS**가 필요하다. Windows에서도 C 컴파일러 없이 SQLite를 사용할 수 있다. 현재 검증 환경은 Go 1.26.4, Node.js 26.10.0이다. 주요 의존성은 Gin 1.12.0, GORM 1.31.2, gormlite 0.34.0, React 19.3.0, TypeScript 5.9.3, Vite 8.3.2이며 정확한 버전은 lock 파일에 고정한다. Vite의 Node 요구사항은 [공식 안내](https://vite.dev/guide/)를 참고한다.
+Go **1.26.10 이상**과 Node.js **24.22.1 이상(24 LTS)**이 필요하다. Windows에서도 C 컴파일러 없이 SQLite를 사용할 수 있다. 현재 검증 환경은 Go 1.26.10, Node.js 24.22.1이다. 주요 의존성은 Gin 1.12.0, GORM 1.31.2, gormlite 0.34.0, React 19.3.1, TypeScript 5.9.3, Vite 8.3.5이며 정확한 버전은 `go.mod`와 `web/package-lock.json`에 고정한다. Vite의 Node 요구사항은 [공식 안내](https://vite.dev/guide/)를 참고한다.
+
+2026-10-25 기준 보안 수정 버전을 반영했다. Node.js는 [10월 21일 보안 릴리스](https://nodejs.org/en/blog/vulnerability/october-2026-security-releases), Go는 [1.26.10 보안 릴리스](https://go.dev/doc/devel/release#go1.26.10)를 적용하며 Docker 빌드와 CI도 같은 버전을 사용한다. `golang.org/x/net`은 [HTTP/2 보안 수정](https://pkg.go.dev/vuln/GO-2026-6610)이 포함된 0.60.0으로 올렸다. 프론트엔드는 [Vite 보안 수정](https://github.com/vitejs/vite/security/advisories/GHSA-rq7h-c2jc-7f22)을 포함한 8.3.5와 [React 19.3.1](https://github.com/react/react/security/advisories/GHSA-xqc2-xf4c-x3h3)을 사용한다. React 공지의 대상인 Server Components는 이 앱에서 사용하지 않는다.
 
 프로젝트 루트에서 실행한다.
 
@@ -164,7 +166,7 @@ npm run test:e2e
 
 ## GitHub Actions 이미지 빌드
 
-[`.github/workflows/build.yml`](.github/workflows/build.yml)이 Go 1.26.4와 Node.js 24.21.0으로 빌드한다. Go 테스트·vet, 프론트엔드 레이아웃 테스트·TypeScript 검사·Vite 빌드가 모두 통과하면 Docker 이미지를 만든다. 컨테이너를 직접 실행해 API 상태와 프론트엔드 응답도 확인한다.
+[`.github/workflows/build.yml`](.github/workflows/build.yml)이 Go 1.26.10과 Node.js 24.22.1으로 빌드한다. Go 테스트·vet, 프론트엔드 레이아웃 테스트·TypeScript 검사·Vite 빌드가 모두 통과하면 Docker 이미지를 만든다. 컨테이너를 직접 실행해 API 상태와 프론트엔드 응답도 확인한다.
 
 | 실행 조건 | 결과 |
 | --- | --- |
